@@ -1,9 +1,9 @@
 package routers
 
 import (
-	"awesomeProject/config"
-	"awesomeProject/controller"
-	"awesomeProject/middleware"
+	"PushSystem/config"
+	"PushSystem/controller"
+	"PushSystem/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +20,6 @@ func SetupRouter() *gin.Engine {
 		api.POST("register", controller.Register)
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
-
 	}
 	return router
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func CreateToken(uid, secret string) (string, error) {
+func CreateToken(uid string) (string, error) {
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"uid": uid,
 		"exp": time.Now().Add(time.Minute * 15).Unix(),
@@ -18,7 +18,7 @@ func CreateToken(uid, secret string) (string, error) {
 	return token, nil
 }
 
-func ParseToken(tokenString string, secret string) (jwt.MapClaims, error) {
+func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	claim, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

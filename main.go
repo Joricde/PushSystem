@@ -1,16 +1,19 @@
 package main
 
 import (
-	"awesomeProject/config"
-	"awesomeProject/middleware"
+	"PushSystem/config"
+	_ "PushSystem/model"
+	"PushSystem/routers"
+	"PushSystem/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default()
+	//zap.L().Debug(fmt.Sprintln(config.Conf))
+	r := routers.SetupRouter()
 	r.TrustedPlatform = gin.PlatformCloudflare
-	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
+	r.Use(util.GinLogger(), util.GinRecovery(true))
 	err := r.Run(fmt.Sprintf(":%d", config.Conf.AppConfig.Port))
 	if err != nil {
 		panic(err)
