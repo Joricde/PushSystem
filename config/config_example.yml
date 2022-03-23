@@ -1,19 +1,14 @@
 appConfig:
   release: true
   port: 8080
-
 mysql:
   user: root
-  password: 123456
+  password: "password"
   host: 127.0.0.1
   port: 3306
-  db: dbname
-
-log:
-  filename: "logs/msg.log"
-  maxsize: 100
-  maxbackup: 3
-  maxage: 28
-  compress: true
-
-jwt_secret: "secret"
+  db: db
+redis:
+  address: "127.0.0.1:6379"
+  password: "password"
+jwtSecret: "password"
+logPath: "logs/msg.log"
