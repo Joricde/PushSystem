@@ -26,7 +26,6 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 		return []byte(secret), nil
 	})
 	if claims, ok := claim.Claims.(jwt.MapClaims); ok && claim.Valid {
-		fmt.Println(claims["foo"], claims["nbf"])
 		return claims, err
 	}
 	return nil, err

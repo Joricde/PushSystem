@@ -45,7 +45,7 @@ func connectRedis() {
 	})
 	result, err := RedisDB.Ping(c).Result()
 	if err != nil {
-		return
+		util.Logger.Error(err.Error())
 	}
 	util.Logger.Debug("redis ctx: " + result)
 	fmt.Println("redis ctx: " + result)
