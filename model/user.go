@@ -30,7 +30,7 @@ func CreateUser(user *User) string {
 		zap.L().Debug("create user err: " + err.Error())
 		DB.Rollback()
 	}
-	zap.L().Debug("create user : " + err.Error())
+	zap.L().Debug("create user : ")
 	DB.Commit()
 	return err.Error()
 }

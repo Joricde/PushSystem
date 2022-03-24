@@ -16,8 +16,8 @@ func SetupRouter() *gin.Engine {
 
 	api := router.Group("api/")
 	{
-		api.Any("login", controller.Login)
-		api.Any("register", controller.Register)
+		api.POST("login", controller.Login)
+		api.POST("register", controller.Register)
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
 		authed.GET("home", controller.GetMsg)

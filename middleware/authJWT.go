@@ -30,7 +30,10 @@ func JWT() gin.HandlerFunc {
 					if err != nil {
 						zap.L().Error(err.Error())
 					}
-					util.RenewToken(result)
+					_, err := util.CreateToken(result)
+					if err != nil {
+						return
+					}
 				}
 			}
 		}
