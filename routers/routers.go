@@ -16,10 +16,11 @@ func SetupRouter() *gin.Engine {
 
 	api := router.Group("api/")
 	{
-		api.POST("login", controller.Login)
-		api.POST("register", controller.Register)
+		api.Any("login", controller.Login)
+		api.Any("register", controller.Register)
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
+		authed.GET("home", controller.GetMsg)
 	}
 	return router
 }

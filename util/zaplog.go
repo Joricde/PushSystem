@@ -42,14 +42,12 @@ func init() {
 	lowPriority := zapcore.InfoLevel
 
 	consoleDebugging := zapcore.Lock(os.Stdout)
-	consoleErrors := zapcore.Lock(os.Stderr)
-
 	consoleEncoder := getEncoder()
 	topicEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 
 	core := zapcore.NewTee(
 		zapcore.NewCore(topicEncoder, writeSyncer, lowPriority),
-		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
+		//zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
 		zapcore.NewCore(consoleEncoder, consoleDebugging, highPriority),
 	)
 	Logger = zap.New(core, zap.AddCaller())
@@ -63,7 +61,7 @@ func getEncoder() zapcore.Encoder {
 		LevelKey:       "level",
 		NameKey:        "logger",
 		CallerKey:      "caller",
-		MessageKey:     "msg",
+		MessageKey:     "status",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.CapitalLevelEncoder,

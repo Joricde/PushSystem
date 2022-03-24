@@ -11,4 +11,4 @@ redis:
   address: "127.0.0.1:6379"
   password: "password"
 jwtSecret: "password"
-logPath: "logs/msg.log"
+logPath: "logs/status.log"

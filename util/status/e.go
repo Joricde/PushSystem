@@ -1,4 +1,4 @@
-package msg
+package status
 
 const (
 	SUCCESS       = 200
@@ -17,7 +17,7 @@ const (
 	ErrorDatabase              = 40001
 )
 
-var MsgFlags = map[int]string{
+var Flags = map[int]string{
 	SUCCESS:       "ok",
 	ERROR:         "fail",
 	InvalidParams: "请求参数错误",
@@ -32,9 +32,9 @@ var MsgFlags = map[int]string{
 
 // GetMsg 获取状态码对应信息
 func GetMsg(code int) string {
-	msg, ok := MsgFlags[code]
+	msg, ok := Flags[code]
 	if ok {
 		return msg
 	}
-	return MsgFlags[ERROR]
+	return Flags[ERROR]
 }

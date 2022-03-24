@@ -2,10 +2,10 @@ package model
 
 import (
 	"PushSystem/config"
-	"PushSystem/util"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -45,8 +45,8 @@ func connectRedis() {
 	})
 	result, err := RedisDB.Ping(c).Result()
 	if err != nil {
-		util.Logger.Error(err.Error())
+		zap.L().Error(err.Error())
 	}
-	util.Logger.Debug("redis ctx: " + result)
+	zap.L().Debug("redis ctx: " + result)
 	fmt.Println("redis ctx: " + result)
 }
