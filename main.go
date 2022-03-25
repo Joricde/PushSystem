@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	run()
+}
+
+func run() {
 	//zap.L().Debug(fmt.Sprintln(config.Conf))
 	r := routers.SetupRouter()
 	r.TrustedPlatform = gin.PlatformCloudflare

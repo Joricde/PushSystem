@@ -2,10 +2,10 @@ package model
 
 import (
 	"PushSystem/config"
-	"PushSystem/util"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -21,6 +21,7 @@ func init() {
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DB)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
+		zap.L().Error(err.Error())
 		return
 	}
 	DB = db
@@ -30,8 +31,9 @@ func init() {
 
 func migration() {
 	err := DB.Set("gorm:table_options", "charset=utf8mb4").
-		AutoMigrate(&User{})
+		AutoMigrate(&User{}, &Task{})
 	if err != nil {
+		zap.L().Error(err.Error())
 		return
 	}
 }
@@ -45,8 +47,8 @@ func connectRedis() {
 	})
 	result, err := RedisDB.Ping(c).Result()
 	if err != nil {
-		return
+		zap.L().Error(err.Error())
 	}
-	util.Logger.Debug("redis ctx: " + result)
+	zap.L().Debug("redis ctx: " + result)
 	fmt.Println("redis ctx: " + result)
 }

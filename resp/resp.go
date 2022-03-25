@@ -1,4 +1,10 @@
-package msg
+package resp
+
+type Response struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
 
 const (
 	SUCCESS       = 200
@@ -10,14 +16,14 @@ const (
 	ErrorFailEncryption = 10006
 	ErrorNotCompare     = 10007
 
-	ErrorAuthCheckTokenFail    = 30001 //token 错误
-	ErrorAuthCheckTokenTimeout = 30002 //token 过期
+	ErrorAuthCheckTokenFail    = 30001
+	ErrorAuthCheckTokenTimeout = 30002
 	ErrorAuthToken             = 30003
 	ErrorAuth                  = 30004
 	ErrorDatabase              = 40001
 )
 
-var MsgFlags = map[int]string{
+var Flags = map[int]string{
 	SUCCESS:       "ok",
 	ERROR:         "fail",
 	InvalidParams: "请求参数错误",
@@ -30,11 +36,10 @@ var MsgFlags = map[int]string{
 	ErrorDatabase:              "数据库操作出错,请重试",
 }
 
-// GetMsg 获取状态码对应信息
 func GetMsg(code int) string {
-	msg, ok := MsgFlags[code]
+	msg, ok := Flags[code]
 	if ok {
 		return msg
 	}
-	return MsgFlags[ERROR]
+	return Flags[ERROR]
 }

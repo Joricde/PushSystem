@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type config struct {
 	AppConfig struct {
 		Release bool `yaml:"release"`
@@ -20,3 +22,12 @@ type config struct {
 	JwtSecret string `yaml:"jwtSecret"`
 	LogPath   string `yaml:"logPath"`
 }
+
+const (
+	TokenUID    = "uid"
+	TokenEXP    = "exp"
+	RedisUserID = "userID"
+	HeadUSERID  = RedisUserID
+)
+
+const ExpTime = time.Minute * 30

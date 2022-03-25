@@ -2,40 +2,87 @@ package controller
 
 import (
 	"PushSystem/model"
+	"PushSystem/resp"
 	"PushSystem/util"
-	"PushSystem/util/msg"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"time"
 )
 
 func Login(ctx *gin.Context) {
-	username := ctx.Query("username")
-	password := ctx.Query("password")
-	zap.L().Debug("login")
-	byUsr, err := model.CheckUsername(username)
+	clientUser := new(model.User)
+	err := ctx.BindJSON(clientUser)
 	if err != nil {
+		zap.L().Debug("user: " + ctx.Query("username"))
+		zap.L().Error(err.Error())
+		ctx.JSON(resp.InvalidParams, resp.Response{
+			Code:    resp.InvalidParams,
+			Message: resp.GetMsg(resp.InvalidParams),
+			Data:    nil,
+		})
 		return
 	}
-	if byUsr.Password == password {
-		token, err2 := util.CreateToken(username)
-		if err2 != nil {
-			return
+	zap.L().Debug("Normal login")
+	user := model.GetUserByUsername(clientUser.Username)
+	check := util.AddSalt(clientUser.Password, user.Salt)
+
+	if check == user.Password {
+		_, err = model.SetRedisUser(user)
+		if err != nil {
+			panic(err)
 		}
-		ctx.JSON(msg.SUCCESS, token)
+		token, err := util.CreateToken(user)
+		if err != nil {
+			panic(err)
+		}
+		t := map[string]string{
+			"token": token,
+		}
+		ctx.JSON(resp.SUCCESS, resp.Response{
+			Code:    resp.SUCCESS,
+			Message: resp.GetMsg(resp.SUCCESS),
+			Data:    t,
+		})
+	} else {
+		ctx.JSON(resp.ErrorAuth, resp.Response{
+			Code:    resp.ErrorAuth,
+			Message: resp.GetMsg(resp.ErrorAuth),
+			Data:    nil,
+		})
 	}
-	zap.L().Debug("usr+pwd " + username + password)
+	zap.L().Debug("user login ")
 }
 func Register(ctx *gin.Context) {
-	username := ctx.Query("username")
-	password := ctx.Query("password")
-	u := model.User{
-		Username: username,
-		Password: password,
-	}
-	_, err := model.CreateUser(&u)
+	clientUser := new(model.User)
+	err := ctx.BindJSON(&clientUser)
+	zap.L().Debug(clientUser.ToString())
 	if err != nil {
+		zap.L().Error(err.Error())
+		ctx.JSON(resp.InvalidParams, resp.Response{
+			Code:    resp.InvalidParams,
+			Message: resp.GetMsg(resp.InvalidParams),
+			Data:    nil,
+		})
 		return
 	}
-	ctx.JSON(msg.SUCCESS, username)
-	zap.L().Info(username + password)
+	clientUser.Salt = time.Now().UnixMilli()
+	clientUser.Password = util.AddSalt(clientUser.Password, clientUser.Salt)
+	info := model.CreateUser(clientUser)
+	r := map[string]string{
+		"result": resp.GetMsg(resp.SUCCESS),
+	}
+	if len(info) == 0 {
+		ctx.JSON(resp.SUCCESS, resp.Response{
+			Code:    resp.SUCCESS,
+			Message: resp.GetMsg(resp.SUCCESS),
+			Data:    r,
+		})
+	} else {
+		ctx.JSON(resp.ERROR, resp.Response{
+			Code:    resp.ERROR,
+			Message: resp.GetMsg(resp.ERROR),
+			Data:    nil,
+		})
+	}
+	zap.L().Debug(clientUser.Username + clientUser.Password)
 }

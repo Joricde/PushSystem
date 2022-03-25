@@ -1,8 +1,9 @@
 package middleware
 
 import (
+	"PushSystem/config"
+	"PushSystem/resp"
 	"PushSystem/util"
-	"PushSystem/util/msg"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -16,18 +17,18 @@ func JWT() gin.HandlerFunc {
 		if token == "" {
 			code = 404
 		} else {
-
 			claims, err := util.ParseToken(token)
 			if err != nil {
-				code = msg.ErrorAuthCheckTokenFail
-			} else if time.Now().Unix() > claims["exp"].(int64) {
-				code = msg.ErrorAuthCheckTokenTimeout
+				code = resp.ErrorAuthCheckTokenFail
+			} else if time.Now().Unix() > int64(claims[config.TokenEXP].(float64)) {
+				code = resp.ErrorAuthCheckTokenTimeout
 			}
+			c.Set(config.HeadUSERID, claims[config.TokenUID])
 		}
-		if code != msg.SUCCESS {
+		if code != resp.SUCCESS {
 			c.JSON(400, gin.H{
 				"status": code,
-				"msg":    msg.GetMsg(code),
+				"msg":    resp.GetMsg(code),
 				"data":   data,
 			})
 			c.Abort()

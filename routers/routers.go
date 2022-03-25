@@ -20,6 +20,7 @@ func SetupRouter() *gin.Engine {
 		api.POST("register", controller.Register)
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
+		authed.GET("home", controller.GetMsg)
 	}
 	return router
 }
