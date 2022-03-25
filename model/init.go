@@ -21,6 +21,7 @@ func init() {
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DB)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
+		zap.L().Error(err.Error())
 		return
 	}
 	DB = db
@@ -30,8 +31,9 @@ func init() {
 
 func migration() {
 	err := DB.Set("gorm:table_options", "charset=utf8mb4").
-		AutoMigrate(&User{})
+		AutoMigrate(&User{}, &Task{})
 	if err != nil {
+		zap.L().Error(err.Error())
 		return
 	}
 }
