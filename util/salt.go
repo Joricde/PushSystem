@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func PasswordAddSalt(password string, salt int64) string {
+func AddSalt(password string, salt int64) string {
 	hash := sha256.New()
 	hash.Write([]byte(password))
 	b := hash.Sum([]byte("1"))

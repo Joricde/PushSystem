@@ -1,6 +1,7 @@
 package util
 
 import (
+	"PushSystem/config"
 	"PushSystem/model"
 	"fmt"
 	"github.com/golang-jwt/jwt"
@@ -9,8 +10,8 @@ import (
 
 func CreateToken(user *model.User) (string, error) {
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"uid": user.ID,
-		"exp": time.Now().Add(model.ExpTime).Unix(),
+		config.TokenUID: user.ID,
+		config.TokenEXP: time.Now().Add(config.ExpTime).Unix(),
 	})
 	token, err := at.SignedString([]byte(secret))
 	if err != nil {

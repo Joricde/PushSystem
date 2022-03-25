@@ -1,33 +1,42 @@
 package controller
 
 import (
+	"PushSystem/config"
 	"PushSystem/model"
-	"PushSystem/util"
-	"PushSystem/util/status"
+	"PushSystem/resp"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 func GetMsg(ctx *gin.Context) {
-	user := model.User{}
+	user := new(model.User)
 	err := ctx.BindJSON(user)
 	if err != nil {
 		zap.L().Debug(err.Error())
+		ctx.JSON(resp.ERROR, resp.Response{
+			Code:    resp.ERROR,
+			Message: resp.GetMsg(resp.ERROR),
+			Data:    nil,
+		})
 		return
 	}
-	username := ctx.Query("username")
-	password := ctx.Query("password")
-	zap.L().Debug("login")
-	byUsr := model.GetUserByUsername(user.Username)
-	if err != nil {
-		return
-	}
-	if byUsr.Password == password {
-		token, err2 := util.CreateToken(byUsr)
-		if err2 != nil {
+	ctxGetData, ok := ctx.Get(config.HeadUSERID)
+	userID, _ := ctxGetData.(uint)
+	if ok {
+		if userID != user.ID {
+			ctx.JSON(resp.SUCCESS, resp.Response{
+				Code:    resp.InvalidParams,
+				Message: resp.GetMsg(resp.InvalidParams),
+				Data:    nil,
+			})
 			return
 		}
-		ctx.JSON(status.SUCCESS, token)
 	}
-	zap.L().Debug("usr+pwd " + username + password)
+	data := model.GetAllTaskByUserID(userID)
+	ctx.JSON(resp.SUCCESS, resp.Response{
+		Code:    resp.SUCCESS,
+		Message: resp.GetMsg(resp.SUCCESS),
+		Data:    data,
+	})
+	zap.L().Debug("resp")
 }

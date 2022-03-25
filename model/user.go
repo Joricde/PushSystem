@@ -12,27 +12,30 @@ type User struct {
 	Username  string `gorm:"type:varchar(50);not null;unique;index" json:"username"`
 	Nickname  string `gorm:"type:varchar(50)" json:"nickname"`
 	Password  string `gorm:"type:varchar(256);not null" json:"password"`
-	Salt      int64
-	Phone     int64  `gorm:"index"`
-	Email     string `gorm:"type:varchar(64)"`
-	WechatId  int    `gorm:"index" `
-	WechatKey string `gorm:"type:varchar(128)"`
+	Salt      int64  `gorm:"type:text"`
+	Phone     int64  `gorm:"index" json:"phone"`
+	Email     string `gorm:"type:varchar(64)" json:"email"`
+	WechatId  int    `gorm:"index" json:"wechat_id"`
+	WechatKey string `gorm:"type:varchar(128)" json:"wechat_key"`
 }
 
 func CreateUser(user *User) string {
 	newUser := new(User)
+	r := ""
 	DB.Where("username= ? ", user.Username).First(newUser)
 	if user.Username == newUser.Username {
-		return ""
+		r = "User already exists"
+	} else {
+		err := DB.Create(user).Error
+		if err != nil {
+			r = "create user err: " + err.Error()
+			zap.L().Debug(r)
+			DB.Rollback()
+		}
 	}
-	err := DB.Create(user).Error
-	if err != nil {
-		zap.L().Debug("create user err: " + err.Error())
-		DB.Rollback()
-	}
-	zap.L().Debug("create user : ")
+	zap.L().Debug("create user " + user.Username)
 	DB.Commit()
-	return err.Error()
+	return r
 }
 
 func GetUserByUsername(username string) *User {
