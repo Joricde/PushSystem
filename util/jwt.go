@@ -27,8 +27,12 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 		}
 		return []byte(secret), nil
 	})
-	if claims, ok := claim.Claims.(jwt.MapClaims); ok && claim.Valid {
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := claim.Claims.(jwt.MapClaims)
+	if ok && claim.Valid {
 		return claims, err
 	}
-	return nil, err
+	return nil, fmt.Errorf("params token error ")
 }

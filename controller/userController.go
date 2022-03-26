@@ -15,11 +15,7 @@ func Login(ctx *gin.Context) {
 	if err != nil {
 		zap.L().Debug("user: " + ctx.Query("username"))
 		zap.L().Error(err.Error())
-		ctx.JSON(resp.InvalidParams, resp.Response{
-			Code:    resp.InvalidParams,
-			Message: resp.GetMsg(resp.InvalidParams),
-			Data:    nil,
-		})
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
 		return
 	}
 	zap.L().Debug("Normal login")
@@ -38,17 +34,11 @@ func Login(ctx *gin.Context) {
 		t := map[string]string{
 			"token": token,
 		}
-		ctx.JSON(resp.SUCCESS, resp.Response{
-			Code:    resp.SUCCESS,
-			Message: resp.GetMsg(resp.SUCCESS),
-			Data:    t,
-		})
+		r := resp.NewSuccessResp(resp.WithData(t))
+		ctx.JSON(resp.SUCCESS, r)
 	} else {
-		ctx.JSON(resp.ErrorAuth, resp.Response{
-			Code:    resp.ErrorAuth,
-			Message: resp.GetMsg(resp.ErrorAuth),
-			Data:    nil,
-		})
+		r := resp.New(resp.InvalidParams, resp.GetMsg(resp.ErrorAuth), nil)
+		ctx.JSON(resp.InvalidParams, r)
 	}
 	zap.L().Debug("user login ")
 }
@@ -58,31 +48,23 @@ func Register(ctx *gin.Context) {
 	zap.L().Debug(clientUser.ToString())
 	if err != nil {
 		zap.L().Error(err.Error())
-		ctx.JSON(resp.InvalidParams, resp.Response{
-			Code:    resp.InvalidParams,
-			Message: resp.GetMsg(resp.InvalidParams),
-			Data:    nil,
-		})
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
 		return
 	}
 	clientUser.Salt = time.Now().UnixMilli()
 	clientUser.Password = util.AddSalt(clientUser.Password, clientUser.Salt)
-	info := model.CreateUser(clientUser)
-	r := map[string]string{
-		"result": resp.GetMsg(resp.SUCCESS),
-	}
-	if len(info) == 0 {
-		ctx.JSON(resp.SUCCESS, resp.Response{
-			Code:    resp.SUCCESS,
-			Message: resp.GetMsg(resp.SUCCESS),
-			Data:    r,
-		})
+	result := model.CreateUser(clientUser)
+	if len(result) == 0 {
+		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
+			map[string]string{
+				"result": resp.GetMsg(resp.SUCCESS),
+			})))
 	} else {
-		ctx.JSON(resp.ERROR, resp.Response{
-			Code:    resp.ERROR,
-			Message: resp.GetMsg(resp.ERROR),
-			Data:    nil,
-		})
+		ctx.JSON(resp.ERROR, resp.NewERRORResp())
 	}
 	zap.L().Debug(clientUser.Username + clientUser.Password)
+}
+
+func ChangeInfo() {
+
 }
