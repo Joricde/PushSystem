@@ -10,8 +10,9 @@ import (
 
 func CreateToken(user *model.User) (string, error) {
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		config.TokenUID: user.ID,
-		config.TokenEXP: time.Now().Add(config.ExpTime).Unix(),
+		config.TokenUID:      user.ID,
+		config.TokenUsername: user.Username,
+		config.TokenEXP:      time.Now().Add(config.ExpTime).Unix(),
 	})
 	token, err := at.SignedString([]byte(secret))
 	if err != nil {
@@ -33,6 +34,8 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	claims, ok := claim.Claims.(jwt.MapClaims)
 	if ok && claim.Valid {
 		return claims, err
+	} else {
+		return nil, fmt.Errorf("params token error ")
 	}
-	return nil, fmt.Errorf("params token error ")
+
 }

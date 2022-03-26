@@ -37,7 +37,7 @@ func Login(ctx *gin.Context) {
 		r := resp.NewSuccessResp(resp.WithData(t))
 		ctx.JSON(resp.SUCCESS, r)
 	} else {
-		r := resp.New(resp.InvalidParams, resp.GetMsg(resp.ErrorAuth), nil)
+		r := resp.New(resp.InvalidParams, resp.GetMessage(resp.InvalidParams), nil)
 		ctx.JSON(resp.InvalidParams, r)
 	}
 	zap.L().Debug("user login ")
@@ -57,10 +57,10 @@ func Register(ctx *gin.Context) {
 	if len(result) == 0 {
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
 			map[string]string{
-				"result": resp.GetMsg(resp.SUCCESS),
+				"result": resp.GetMessage(resp.SUCCESS),
 			})))
 	} else {
-		ctx.JSON(resp.ERROR, resp.NewERRORResp())
+		ctx.JSON(resp.ERROR, resp.NewErrorRResp())
 	}
 	zap.L().Debug(clientUser.Username + clientUser.Password)
 }

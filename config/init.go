@@ -8,7 +8,7 @@ import (
 var Conf = new(config)
 
 func init() {
-	yamlFile, err := ioutil.ReadFile("config/config.yml")
+	yamlFile, err := ioutil.ReadFile("config/config.yaml")
 	if err != nil {
 		panic(err)
 	}

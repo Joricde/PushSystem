@@ -15,32 +15,46 @@ type User struct {
 	Salt      int64  `gorm:"type:text"`
 	Phone     int64  `gorm:"index" json:"phone"`
 	Email     string `gorm:"type:varchar(64)" json:"email"`
-	WechatId  int    `gorm:"index" json:"wechat_id"`
+	WechatID  int64  `gorm:"index" json:"wechat_id"`
 	WechatKey string `gorm:"type:varchar(128)" json:"wechat_key"`
 }
 
 func CreateUser(user *User) string {
 	newUser := new(User)
-	r := ""
+	e := ""
 	DB.Where("username= ? ", user.Username).First(newUser)
 	if user.Username == newUser.Username {
-		r = "User already exists"
+		e = "User already exists"
 	} else {
 		err := DB.Create(user).Error
 		if err != nil {
-			r = "create user err: " + err.Error()
-			zap.L().Debug(r)
+			e = "create user err: " + err.Error()
+			zap.L().Debug(e)
 			DB.Rollback()
 		}
 	}
 	zap.L().Debug("create user " + user.Username)
 	DB.Commit()
-	return r
+	return e
 }
 
 func GetUserByUsername(username string) *User {
 	user := new(User)
 	DB.Where(&User{Username: username}).First(user)
+	zap.L().Debug(fmt.Sprintln(user))
+	return user
+}
+
+func GetUserByPhone(phone int64) *User {
+	user := new(User)
+	DB.Where(&User{Phone: phone}).First(user)
+	zap.L().Debug(fmt.Sprintln(user))
+	return user
+}
+
+func GetUserByWechatID(wechatId int64) *User {
+	user := new(User)
+	DB.Where(&User{WechatID: wechatId}).First(user)
 	zap.L().Debug(fmt.Sprintln(user))
 	return user
 }

@@ -33,7 +33,7 @@ func NewSuccessResp(opts ...Option) *Response {
 	return resp.withOptions(opts...)
 }
 
-func NewERRORResp(opts ...Option) *Response {
+func NewErrorRResp(opts ...Option) *Response {
 	resp := &Response{
 		Code:    ERROR,
 		Message: Flags[ERROR],

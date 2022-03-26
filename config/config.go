@@ -24,10 +24,12 @@ type config struct {
 }
 
 const (
-	TokenUID    = "uid"
-	TokenEXP    = "exp"
-	RedisUserID = "userID"
-	HeadUSERID  = RedisUserID
+	TokenUID      = "uid"
+	TokenUsername = "username"
+	TokenEXP      = "exp"
+	RedisUserID   = TokenUID
+	HeadUserID    = RedisUserID
+	HeadUsername  = TokenUsername
 )
 
 const ExpTime = time.Minute * 30
