@@ -3,6 +3,7 @@ package controller
 import (
 	"PushSystem/model"
 	"PushSystem/resp"
+	"PushSystem/service"
 	"PushSystem/util"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,17 +19,16 @@ func Login(ctx *gin.Context) {
 		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
 		return
 	}
+	var userService = new(service.UserService)
 	zap.L().Debug("Normal login")
-	user := model.GetUserByUsername(clientUser.Username)
-	check := util.AddSalt(clientUser.Password, user.Salt)
-
-	if check == user.Password {
-		_, err = model.SetRedisUser(user)
+	if userService.IsUserPassword(clientUser.Username, clientUser.Password) {
+		user := userService.GetUserByUsername(clientUser.Username)
 		if err != nil {
 			panic(err)
 		}
 		token, err := util.CreateToken(user)
 		if err != nil {
+			zap.L().Error(err.Error())
 			panic(err)
 		}
 		t := map[string]string{
@@ -51,20 +51,31 @@ func Register(ctx *gin.Context) {
 		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
 		return
 	}
+	var userService = new(service.UserService)
 	clientUser.Salt = time.Now().UnixMilli()
 	clientUser.Password = util.AddSalt(clientUser.Password, clientUser.Salt)
-	result := model.CreateUser(clientUser)
-	if len(result) == 0 {
+	if userService.IsCreateUser(clientUser) {
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
 			map[string]string{
 				"result": resp.GetMessage(resp.SUCCESS),
 			})))
 	} else {
-		ctx.JSON(resp.ERROR, resp.NewErrorRResp())
+		ctx.JSON(resp.ERROR, resp.NewErrorResp())
 	}
-	zap.L().Debug(clientUser.Username + clientUser.Password)
 }
 
-func ChangeInfo() {
+func CheckUsernameExist(ctx *gin.Context) {
+	var userService = new(service.UserService)
+	username := ctx.Query("username")
+	if username != "" {
+		if userService.IsUsernameExist(username) {
+			ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名已存在")))
+		}
+	} else {
+		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithMessage("ok")))
+	}
+}
+
+func ChangeInfo(ctx *gin.Context) {
 
 }

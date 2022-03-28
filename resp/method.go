@@ -33,7 +33,7 @@ func NewSuccessResp(opts ...Option) *Response {
 	return resp.withOptions(opts...)
 }
 
-func NewErrorRResp(opts ...Option) *Response {
+func NewErrorResp(opts ...Option) *Response {
 	resp := &Response{
 		Code:    ERROR,
 		Message: Flags[ERROR],
@@ -60,14 +60,6 @@ func NewDefaultSuccessResp(opts ...Option) *Response {
 	return resp.withOptions(opts...)
 }
 
-func (r *Response) withOptions(opts ...Option) *Response {
-	c := r.clone()
-	for _, opt := range opts {
-		opt.apply(c)
-	}
-	return c
-}
-
 func WithCode(code int) Option {
 	return optionFunc(func(r *Response) {
 		r.Code = code
@@ -84,6 +76,14 @@ func WithData(data interface{}) Option {
 	return optionFunc(func(r *Response) {
 		r.Data = data
 	})
+}
+
+func (r *Response) withOptions(opts ...Option) *Response {
+	c := r.clone()
+	for _, opt := range opts {
+		opt.apply(c)
+	}
+	return c
 }
 
 func (r *Response) clone() *Response {

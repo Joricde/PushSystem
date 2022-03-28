@@ -1,19 +1,25 @@
 package model
 
+import (
+	"fmt"
+	"gorm.io/gorm"
+)
+
 type ShareTask struct {
+	gorm.Model
 	User   User
 	UserID uint
 	Task   Task
 	TaskID uint
 }
 
-func GetAllShareTaskByUserID(userID uint) []Task {
+func (t ShareTask) GetAllShareTaskByUserID(userID uint) []Task {
 	var tasks []Task
 	DB.Find(&tasks, Task{UserID: userID})
 	return tasks
 }
 
-func GetAllShareTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task {
+func (t ShareTask) GetAllShareTaskByUserIDLimit(userID uint, page int, pageSize int) []Task {
 	var shareTask []Task
 	if page == 0 {
 		page = 1
@@ -27,4 +33,8 @@ func GetAllShareTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task 
 	offset := (page - 1) * pageSize
 	DB.Offset(offset).Find(&userID, Task{UserID: userID}).Limit(pageSize)
 	return shareTask
+}
+
+func (t ShareTask) ToString() string {
+	return fmt.Sprintf("%+v", t)
 }

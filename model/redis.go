@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func SetRedisUser(user *User) (string, error) {
+func (u User) SetRedisUser(user *User) (string, error) {
 	key := config.RedisUserID + strconv.Itoa(int(user.ID))
 	val, _ := json.Marshal(user)
 	result, err := RedisDB.Set(c, key, val, config.ExpTime).Result()
@@ -16,7 +16,7 @@ func SetRedisUser(user *User) (string, error) {
 	return result, nil
 }
 
-func GetRedisUserByID(id uint) (*User, error) {
+func (u User) GetRedisUserByID(id uint) (*User, error) {
 	key := config.RedisUserID + strconv.Itoa(int(id))
 	jsUser, err := RedisDB.Get(c, key).Result()
 	if err != nil {

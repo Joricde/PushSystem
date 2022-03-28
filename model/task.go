@@ -31,7 +31,7 @@ const (
 	LevelAVG int = 3
 )
 
-func CreateTask(task *Task) string {
+func (t Task) CreateTask(task *Task) string {
 	newTask := new(Task)
 	info := ""
 	err := DB.Create(newTask).Error
@@ -44,13 +44,13 @@ func CreateTask(task *Task) string {
 	return info
 }
 
-func GetAllTaskByUserID(userID uint) []Task {
+func (t Task) GetAllTaskByUserID(userID uint) []Task {
 	var tasks []Task
 	DB.Find(&tasks, Task{UserID: userID})
 	return tasks
 }
 
-func GetAllTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task {
+func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) []Task {
 	var shareTask []Task
 	if page == 0 {
 		page = 1
@@ -66,7 +66,7 @@ func GetAllTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task {
 	return shareTask
 }
 
-func UpdateTaskByTaskID(task Task) string {
+func (t Task) UpdateTaskByTaskID(task Task) string {
 	info := ""
 	err := DB.Model(&task).Updates(Task{}).Error
 	if err != nil {
