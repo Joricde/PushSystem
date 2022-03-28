@@ -5,56 +5,65 @@ import (
 	"PushSystem/resp"
 	"PushSystem/service"
 	"PushSystem/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"time"
 )
 
+type UserInfo struct {
+	User model.User
+	Pwd  model.UserPwd
+}
+
+func (i UserInfo) ToString() string {
+	return fmt.Sprintf("%+v", i)
+}
+
 func Login(ctx *gin.Context) {
-	clientUser := new(model.User)
-	err := ctx.BindJSON(clientUser)
+	userInfo := new(UserInfo)
+	err := ctx.BindJSON(userInfo)
+	zap.L().Debug(fmt.Sprintln(userInfo))
 	if err != nil {
-		zap.L().Debug("user: " + ctx.Query("username"))
 		zap.L().Error(err.Error())
 		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
 		return
 	}
 	var userService = new(service.UserService)
-	zap.L().Debug("Normal login")
-	if userService.IsUserPassword(clientUser.Username, clientUser.Password) {
-		user := userService.GetUserByUsername(clientUser.Username)
-		if err != nil {
-			panic(err)
-		}
+	user := userService.GetUserByUsername(userInfo.User.Username)
+	if user.ID == 0 {
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp(resp.WithMessage("用户名不存在")))
+		return
+	} else if userService.IsUserPassword(user.ID, userInfo.Pwd.Password) {
 		token, err := util.CreateToken(user)
 		if err != nil {
 			zap.L().Error(err.Error())
-			panic(err)
 		}
 		t := map[string]string{
 			"token": token,
 		}
+		_, err = userService.SetRedisUser(user)
+		if err != nil {
+			return
+		}
 		r := resp.NewSuccessResp(resp.WithData(t))
 		ctx.JSON(resp.SUCCESS, r)
 	} else {
-		r := resp.New(resp.InvalidParams, resp.GetMessage(resp.InvalidParams), nil)
+		r := resp.NewInvalidResp(resp.WithMessage("用户名或密码错误"))
 		ctx.JSON(resp.InvalidParams, r)
 	}
-	zap.L().Debug("user login ")
 }
+
 func Register(ctx *gin.Context) {
-	clientUser := new(model.User)
-	err := ctx.BindJSON(&clientUser)
-	zap.L().Debug(clientUser.ToString())
-	if err != nil {
-		zap.L().Error(err.Error())
-		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
+	userInfo := new(UserInfo)
+	if !isBindUser(ctx, userInfo) {
 		return
 	}
 	var userService = new(service.UserService)
-	clientUser.Salt = time.Now().UnixMilli()
-	clientUser.Password = util.AddSalt(clientUser.Password, clientUser.Salt)
-	if userService.IsCreateUser(clientUser) {
+	userInfo.Pwd.Salt = time.Now().UnixMilli()
+	userInfo.Pwd.Password = util.AddSalt(userInfo.Pwd.Password, userInfo.Pwd.Salt)
+	zap.L().Debug(userInfo.ToString())
+	if userService.IsCreateUser(&userInfo.User, &userInfo.Pwd) {
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
 			map[string]string{
 				"result": resp.GetMessage(resp.SUCCESS),
@@ -76,6 +85,19 @@ func CheckUsernameExist(ctx *gin.Context) {
 	}
 }
 
-func ChangeInfo(ctx *gin.Context) {
-
+func isBindUser(ctx *gin.Context, user *UserInfo) bool {
+	err := ctx.BindJSON(user)
+	zap.L().Debug(fmt.Sprintln(user))
+	if err != nil {
+		zap.L().Error(err.Error())
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp())
+		return false
+	} else if user.User.Username == "" {
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp(resp.WithMessage("用户名为空")))
+		return false
+	} else if user.Pwd.Password == "" {
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp(resp.WithMessage("密码为空")))
+		return false
+	}
+	return true
 }

@@ -18,11 +18,11 @@ func (u UserService) IsUsernameExist(username string) bool {
 	}
 }
 
-func (u UserService) IsUserPassword(username string, password string) bool {
+func (u UserService) IsUserPassword(uid uint, password string) bool {
 	newUser := new(model.User)
-	user := newUser.GetUserByUsername(username)
-	passwordEscape := util.AddSalt(password, user.Salt)
-	if passwordEscape == user.Password {
+	userPwd := newUser.GetUserPwdByUserID(uid)
+	passwordEscape := util.AddSalt(password, userPwd.Salt)
+	if passwordEscape == userPwd.Password {
 		return true
 	} else {
 		return false
@@ -37,6 +37,10 @@ func (u UserService) GetUserByUsername(username string) *model.User {
 	return model.User{}.GetUserByUsername(username)
 }
 
-func (u UserService) IsCreateUser(user *model.User) bool {
-	return model.User{}.CreateUser(user)
+func (u UserService) IsCreateUser(user *model.User, pwd *model.UserPwd) bool {
+	return model.User{}.CreateUser(user, pwd)
+}
+
+func (u UserService) GetUserPwdByUid(uid uint) *model.UserPwd {
+	return model.User{}.GetUserPwdByUserID(uid)
 }

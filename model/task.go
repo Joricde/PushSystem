@@ -10,7 +10,7 @@ import (
 
 type Task struct {
 	gorm.Model
-	User            User
+	User            User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	UserID          uint
 	Tile            string
 	Context         string
@@ -31,17 +31,17 @@ const (
 	LevelAVG int = 3
 )
 
-func (t Task) CreateTask(task *Task) string {
+func (t Task) CreateTask(task *Task) bool {
 	newTask := new(Task)
-	info := ""
 	err := DB.Create(newTask).Error
 	if err != nil {
-		info = "create task err: " + err.Error()
-		zap.L().Debug(info)
+		zap.L().Debug(err.Error())
 		DB.Rollback()
+		return false
+	} else {
+		zap.L().Debug("create task " + task.Tile)
+		return true
 	}
-	zap.L().Debug("create task " + task.Tile)
-	return info
 }
 
 func (t Task) GetAllTaskByUserID(userID uint) []Task {
@@ -66,16 +66,15 @@ func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) []Tas
 	return shareTask
 }
 
-func (t Task) UpdateTaskByTaskID(task Task) string {
-	info := ""
+func (t Task) UpdateTaskByTaskID(task Task) bool {
 	err := DB.Model(&task).Updates(Task{}).Error
 	if err != nil {
-		info = "create task err: " + err.Error()
-		zap.L().Debug(info)
+		zap.L().Debug(err.Error())
 		DB.Rollback()
+		return false
 	}
 	zap.L().Debug("create task " + utils.ToString(task.ID))
-	return info
+	return true
 }
 
 func (t Task) ToString() string {

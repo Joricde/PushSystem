@@ -2,12 +2,13 @@ package model
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type ShareTask struct {
 	gorm.Model
-	User   User
+	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	UserID uint
 	Task   Task
 	TaskID uint
@@ -15,7 +16,10 @@ type ShareTask struct {
 
 func (t ShareTask) GetAllShareTaskByUserID(userID uint) []Task {
 	var tasks []Task
-	DB.Find(&tasks, Task{UserID: userID})
+	e := DB.Find(&tasks, Task{UserID: userID}).Error
+	if e != nil {
+		zap.L().Error(e.Error())
+	}
 	return tasks
 }
 
