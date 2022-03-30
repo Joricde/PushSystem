@@ -9,8 +9,8 @@ import (
 // User Model
 type User struct {
 	gorm.Model
-	Username string `gorm:"type:varchar(50);not null;unique;index" json:"username"`
-	Nickname string `gorm:"type:varchar(50)" json:"nickname"`
+	Username string `gorm:"type:varchar(64);not null;unique;index" json:"username"`
+	Nickname string `gorm:"type:varchar(64)" json:"nickname"`
 	Phone    int64  `gorm:"index" json:"phone"`
 	Email    string `gorm:"type:varchar(64); index" json:"email"`
 	WechatID int64  `gorm:"index" json:"wechat_id"`
@@ -27,55 +27,52 @@ type UserPwd struct {
 
 func (u User) CreateUser(user *User, pwd *UserPwd) bool {
 	err := DB.Create(user).Error
+	b := true
 	if err != nil {
-		zap.L().Debug("create user err: " + err.Error())
+		zap.L().Error("create user err: " + err.Error())
 		DB.Rollback()
-		return false
-	}
-	pwd.UserID = u.GetUserByUsername(user.Username).ID
-	err = DB.Create(pwd).Error
-	if err != nil {
-		zap.L().Debug("create user err: " + err.Error())
-		DB.Rollback()
-		return false
+		b = false
+	} else {
+		pwd.UserID = u.GetUserByUsername(user.Username).ID
+		err = DB.Create(pwd).Error
+		if err != nil {
+			zap.L().Debug("create user err: " + err.Error())
+			DB.Rollback()
+			b = false
+		}
 	}
 	zap.L().Debug("create user " + user.Username)
 	DB.Commit()
-	return true
+	return b
 }
 
 func (u User) GetUserPwdByUserID(uid uint) *UserPwd {
 	userPwd := new(UserPwd)
 	DB.Where("user_id = ?", uid).First(userPwd)
-	zap.L().Debug(fmt.Sprintln(userPwd))
 	return userPwd
 }
 
 func (u User) GetUserByUsername(username string) *User {
 	user := new(User)
 	DB.Where(&User{Username: username}).First(user)
-	zap.L().Debug(fmt.Sprintln(user))
 	return user
 }
 
 func (u User) GetUserByPhone(phone int64) *User {
 	user := new(User)
 	DB.Where(&User{Phone: phone}).First(user)
-	zap.L().Debug(fmt.Sprintln(user))
 	return user
 }
 
 func (u User) GetUserByEmail(email string) *User {
 	user := new(User)
 	DB.Where(&User{Email: email}).First(user)
-	zap.L().Debug(fmt.Sprintln(user))
 	return user
 }
 
 func (u User) GetUserByWechatID(wechatId int64) *User {
 	user := new(User)
 	DB.Where(&User{WechatID: wechatId}).First(user)
-	zap.L().Debug(fmt.Sprintln(user))
 	return user
 }
 
@@ -88,7 +85,6 @@ func (u User) UpdateUserInfo(user User) bool {
 		Email:    user.Email,
 		WechatID: user.WechatID,
 	}).Error
-	zap.L().Debug(fmt.Sprintln(user))
 	if len(e.Error()) > 0 {
 		zap.L().Error(e.Error())
 		return false
@@ -102,7 +98,6 @@ func (u User) UpdateUserPassword(uid uint, pwd UserPwd) bool {
 		Password: pwd.Password,
 		Salt:     pwd.Salt,
 	}).Error
-	zap.L().Debug(fmt.Sprintln(pwd))
 	if len(e.Error()) > 0 {
 		zap.L().Error(e.Error())
 		return false
@@ -113,9 +108,8 @@ func (u User) UpdateUserPassword(uid uint, pwd UserPwd) bool {
 
 func (u User) DeleteUserByID(uid uint) bool {
 	e := DB.Where("id = ?", uid).Delete(&User{}).Error
-	zap.L().Debug("delete user, ok")
 	if e != nil {
-		zap.L().Debug(e.Error())
+		zap.L().Error(e.Error())
 		return false
 	} else {
 		return true

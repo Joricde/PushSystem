@@ -34,14 +34,14 @@ const (
 func (t Task) CreateTask(task *Task) bool {
 	newTask := new(Task)
 	err := DB.Create(newTask).Error
+	b := true
 	if err != nil {
 		zap.L().Debug(err.Error())
 		DB.Rollback()
-		return false
-	} else {
-		zap.L().Debug("create task " + task.Tile)
-		return true
+		b = false
 	}
+	zap.L().Debug("create task " + task.Tile)
+	return b
 }
 
 func (t Task) GetAllTaskByUserID(userID uint) []Task {
@@ -68,13 +68,14 @@ func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) []Tas
 
 func (t Task) UpdateTaskByTaskID(task Task) bool {
 	err := DB.Model(&task).Updates(Task{}).Error
+	b := true
 	if err != nil {
 		zap.L().Debug(err.Error())
 		DB.Rollback()
-		return false
+		b = false
 	}
 	zap.L().Debug("create task " + utils.ToString(task.ID))
-	return true
+	return b
 }
 
 func (t Task) ToString() string {

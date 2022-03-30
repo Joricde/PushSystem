@@ -11,7 +11,7 @@ import (
 func JWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		code := resp.InvalidParams
-		token := ctx.GetHeader("token")
+		token := ctx.GetHeader("Authorization")
 		if token == "" {
 			r := resp.NewInvalidResp(resp.WithMessage("token为空"))
 			ctx.JSON(code, r)

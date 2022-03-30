@@ -3,6 +3,7 @@ package service
 import (
 	"PushSystem/model"
 	"PushSystem/util"
+	"go.uber.org/zap"
 )
 
 type UserService struct {
@@ -10,7 +11,8 @@ type UserService struct {
 
 func (u UserService) IsUsernameExist(username string) bool {
 	newUser := new(model.User)
-	newUser.GetUserByUsername(username)
+	newUser = newUser.GetUserByUsername(username)
+	zap.L().Debug("db: " + newUser.Username + "  username: " + username)
 	if username == newUser.Username {
 		return true
 	} else {

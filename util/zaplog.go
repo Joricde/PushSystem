@@ -47,11 +47,10 @@ func init() {
 
 	core := zapcore.NewTee(
 		zapcore.NewCore(topicEncoder, writeSyncer, lowPriority),
-		//zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
 		zapcore.NewCore(consoleEncoder, consoleDebugging, highPriority),
 	)
 	Logger = zap.New(core, zap.AddCaller())
-	l = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	l = zap.New(core)
 	zap.ReplaceGlobals(Logger)
 }
 
