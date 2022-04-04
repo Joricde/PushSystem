@@ -13,7 +13,7 @@ func SetupRouter() *gin.Engine {
 	}
 	router := gin.Default()
 	router.Static("/static", "static")
-
+	router.Use(middleware.GlobeLimitRequest())
 	api := router.Group("api/")
 	{
 		api.POST("login", controller.Login)

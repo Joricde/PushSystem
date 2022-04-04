@@ -21,7 +21,8 @@ func JWT() gin.HandlerFunc {
 			if err != nil {
 				r := resp.NewInvalidResp(resp.WithMessage("token错误"))
 				ctx.JSON(code, r)
-			} else if time.Now().Unix() > int64(claims[config.TokenEXP].(float64)) {
+				ctx.Abort()
+			} else if time.Now().Unix() > claims[config.TokenEXP].(int64) {
 				r := resp.NewInvalidResp(resp.WithMessage("token已超时"))
 				ctx.JSON(code, r)
 				ctx.Abort()

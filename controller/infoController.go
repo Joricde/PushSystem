@@ -13,14 +13,14 @@ func GetMsg(ctx *gin.Context) {
 	user := new(model.User)
 	err := ctx.BindJSON(user)
 	if err != nil {
-		zap.L().Debug(err.Error())
-		ctx.JSON(resp.ERROR, resp.NewErrorResp())
+		zap.L().Error(err.Error())
+		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 		return
 	}
 	userID := ctx.GetUint(config.HeadUserID)
 	username := ctx.GetString(config.HeadUsername)
 	if username != user.Username {
-		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("无权访问")))
+		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp(resp.WithMessage("无权访问")))
 		return
 	}
 	data := service.MsgService{}.GetAllTaskByUserID(userID)

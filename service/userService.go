@@ -3,7 +3,6 @@ package service
 import (
 	"PushSystem/model"
 	"PushSystem/util"
-	"go.uber.org/zap"
 )
 
 type UserService struct {
@@ -12,7 +11,6 @@ type UserService struct {
 func (u UserService) IsUsernameExist(username string) bool {
 	newUser := new(model.User)
 	newUser = newUser.GetUserByUsername(username)
-	zap.L().Debug("db: " + newUser.Username + "  username: " + username)
 	if username == newUser.Username {
 		return true
 	} else {
@@ -31,16 +29,16 @@ func (u UserService) IsUserPassword(uid uint, password string) bool {
 	}
 }
 
+func (u UserService) IsCreateUser(user *model.User, pwd *model.UserPwd) bool {
+	return model.User{}.CreateUser(user, pwd)
+}
+
 func (u UserService) SetRedisUser(user *model.User) (string, error) {
 	return model.User{}.SetRedisUser(user)
 }
 
 func (u UserService) GetUserByUsername(username string) *model.User {
 	return model.User{}.GetUserByUsername(username)
-}
-
-func (u UserService) IsCreateUser(user *model.User, pwd *model.UserPwd) bool {
-	return model.User{}.CreateUser(user, pwd)
 }
 
 func (u UserService) GetUserPwdByUid(uid uint) *model.UserPwd {
