@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"PushSystem/config"
 	"PushSystem/model"
 	"PushSystem/resp"
 	"PushSystem/service"
@@ -16,12 +17,13 @@ type UserInfo struct {
 	Pwd  model.UserPwd
 }
 
+var userService = new(service.UserService)
+
 func Login(ctx *gin.Context) {
 	userInfo := new(UserInfo)
 	if !isBindUser(ctx, userInfo) {
 		return
 	}
-	var userService = new(service.UserService)
 	user := userService.GetUserByUsername(userInfo.User.Username)
 	if user.ID == 0 {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名或密码错误")))
@@ -51,11 +53,10 @@ func Register(ctx *gin.Context) {
 	if !isBindUser(ctx, userInfo) {
 		return
 	}
-	var userService = new(service.UserService)
 	userInfo.Pwd.Salt = time.Now().UnixMilli()
 	userInfo.Pwd.Password = util.AddSalt(userInfo.Pwd.Password, userInfo.Pwd.Salt)
 	zap.L().Debug(userInfo.ToString())
-	if userService.IsCreateUser(&userInfo.User, &userInfo.Pwd) {
+	if userService.CreateUser(&userInfo.User, &userInfo.Pwd) {
 		zap.L().Debug("create " + userInfo.ToString())
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
 			map[string]string{
@@ -67,7 +68,6 @@ func Register(ctx *gin.Context) {
 }
 
 func CheckUsernameExist(ctx *gin.Context) {
-	var userService = new(service.UserService)
 	username := ctx.Query("username")
 	if username == "" {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名不能为空")))
@@ -86,39 +86,53 @@ func ChangeUserInfo(ctx *gin.Context) {
 	if !isBindUser(ctx, userInfo) {
 		return
 	}
-	var userService = new(service.UserService)
-	userInfo.Pwd.Salt = time.Now().UnixMilli()
-	userInfo.Pwd.Password = util.AddSalt(userInfo.Pwd.Password, userInfo.Pwd.Salt)
 	zap.L().Debug(userInfo.ToString())
-	if userService.IsCreateUser(&userInfo.User, &userInfo.Pwd) {
-		zap.L().Debug("create " + userInfo.ToString())
-		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
-			map[string]string{
-				"result": resp.GetMessage(resp.SUCCESS),
-			})))
+	uid := ctx.GetUint(config.TokenUID)
+	userInfo.User.ID = uid
+	if userService.SetUserInfo(&userInfo.User) {
+		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
 	} else {
-		ctx.JSON(resp.ERROR, resp.NewErrorResp())
+		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
+	}
+}
+
+func CheckUsePwd(ctx *gin.Context) {
+	pwd := ctx.PostForm("password")
+	uid := ctx.GetUint(config.TokenUID)
+	if pwd == "" {
+		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("密码不能为空")))
+		return
+	} else {
+		if userService.IsUserPassword(uid, pwd) {
+			ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithMessage("ok")))
+		} else {
+			ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("密码错误")))
+		}
 	}
 }
 
 func ChangeUserPWD(ctx *gin.Context) {
-	userInfo := new(UserInfo)
-	if !isBindUser(ctx, userInfo) {
-		return
-	}
-	var userService = new(service.UserService)
-	userInfo.Pwd.Salt = time.Now().UnixMilli()
-	userInfo.Pwd.Password = util.AddSalt(userInfo.Pwd.Password, userInfo.Pwd.Salt)
-	zap.L().Debug(userInfo.ToString())
-	if userService.IsCreateUser(&userInfo.User, &userInfo.Pwd) {
-		zap.L().Debug("create " + userInfo.ToString())
-		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
-			map[string]string{
-				"result": resp.GetMessage(resp.SUCCESS),
-			})))
+	pwd := ctx.PostForm("password")
+	uid := ctx.GetUint(config.TokenUID)
+	if userService.SetPassword(uid, pwd) {
+		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
 	} else {
-		ctx.JSON(resp.ERROR, resp.NewErrorResp())
+		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 	}
+}
+
+func ChangeWechatKey(ctx *gin.Context) {
+	WechatKey := ctx.PostForm("wechat_key")
+	uid := ctx.GetUint(config.TokenUID)
+	if userService.SetWechatKey(uid, WechatKey) {
+		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
+	} else {
+		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
+	}
+}
+
+func RetrievePwd(ctx *gin.Context) {
+
 }
 
 func isBindUser(ctx *gin.Context, user *UserInfo) bool {

@@ -1,0 +1,14 @@
+appConfig:
+  release: true
+  port: 8080
+mysql:
+  user: root
+  password: "password"
+  host: 127.0.0.1
+  port: 3306
+  db: db
+redis:
+  address: "127.0.0.1:6379"
+  password: "password"
+jwtSecret: "password"
+logPath: "logs/status.log"

@@ -76,7 +76,7 @@ func (u User) GetUserByWechatID(wechatId int64) *User {
 	return user
 }
 
-func (u User) UpdateUserInfo(user User) bool {
+func (u User) UpdateUserInfo(user *User) bool {
 	newUser := new(User)
 	e := DB.Model(newUser).Updates(User{
 		Username: user.Username,
@@ -93,10 +93,22 @@ func (u User) UpdateUserInfo(user User) bool {
 	}
 }
 
-func (u User) UpdateUserPassword(uid uint, pwd UserPwd) bool {
+func (u User) UpdateUserPassword(uid uint, pwd *UserPwd) bool {
 	e := DB.Model(UserPwd{}).Where("user_id = ? ", uid).Updates(UserPwd{
 		Password: pwd.Password,
 		Salt:     pwd.Salt,
+	}).Error
+	if len(e.Error()) > 0 {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
+}
+
+func (u User) UpdateUserWechatKey(uid uint, wechatKey string) bool {
+	e := DB.Model(UserPwd{}).Where("user_id = ? ", uid).Updates(UserPwd{
+		WechatKey: wechatKey,
 	}).Error
 	if len(e.Error()) > 0 {
 		zap.L().Error(e.Error())

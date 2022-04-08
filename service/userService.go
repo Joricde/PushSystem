@@ -3,10 +3,10 @@ package service
 import (
 	"PushSystem/model"
 	"PushSystem/util"
+	"time"
 )
 
-type UserService struct {
-}
+type UserService struct{}
 
 func (u UserService) IsUsernameExist(username string) bool {
 	newUser := new(model.User)
@@ -29,18 +29,29 @@ func (u UserService) IsUserPassword(uid uint, password string) bool {
 	}
 }
 
-func (u UserService) IsCreateUser(user *model.User, pwd *model.UserPwd) bool {
+func (u UserService) CreateUser(user *model.User, pwd *model.UserPwd) bool {
 	return model.User{}.CreateUser(user, pwd)
 }
 
-func (u UserService) SetRedisUser(user *model.User) (string, error) {
-	return model.User{}.SetRedisUser(user)
+func (u UserService) SetPassword(uid uint, pwd string) bool {
+	userPwd := new(model.UserPwd)
+	userPwd.Salt = time.Now().UnixMilli()
+	userPwd.Password = util.AddSalt(userPwd.Password, userPwd.Salt)
+	return model.User{}.UpdateUserPassword(uid, userPwd)
+}
+
+func (u UserService) SetWechatKey(uid uint, wechatKey string) bool {
+	return model.User{}.UpdateUserWechatKey(uid, wechatKey)
+}
+
+func (u UserService) SetUserInfo(user *model.User) bool {
+	return model.User{}.UpdateUserInfo(user)
 }
 
 func (u UserService) GetUserByUsername(username string) *model.User {
 	return model.User{}.GetUserByUsername(username)
 }
 
-func (u UserService) GetUserPwdByUid(uid uint) *model.UserPwd {
-	return model.User{}.GetUserPwdByUserID(uid)
+func (u UserService) SetRedisUser(user *model.User) (string, error) {
+	return model.User{}.SetRedisUser(user)
 }

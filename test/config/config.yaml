@@ -1,0 +1,17 @@
+appConfig:
+  release: false
+  port: 9000
+mysql:
+  user: root
+  password: 3RQmGCZnP3SZaVYr
+  host: 127.0.0.1
+  port: 3306
+  db: psdb
+redis:
+  address: 175.178.16.55:6379
+  password: 3RQmGCZnP3SZaVYr
+jwtSecret: YWYHAJGJKRvCaS5d
+logPath: "logs/status.log"
+
+huawei:
+  

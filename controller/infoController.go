@@ -27,3 +27,7 @@ func GetMsg(ctx *gin.Context) {
 	ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(data)))
 	zap.L().Debug("resp")
 }
+
+func SetMsg(ctx *gin.Context) {
+
+}
