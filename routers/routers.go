@@ -13,15 +13,22 @@ func SetupRouter() *gin.Engine {
 	}
 	router := gin.Default()
 	router.Static("/static", "static")
-	router.Use(middleware.GlobeLimitRequest())
+	//router.Use(middleware.GlobeLimitRequest())
 	api := router.Group("api/")
 	{
-		api.POST("login", controller.Login)
-		api.GET("check_name", controller.CheckUsernameExist)
-		api.POST("register", controller.Register)
+		user := api.Group("user")
+		{
+			user.POST("login", controller.Login)
+			user.GET("wechat_qr", controller.GetWechatQR)
+			user.POST("wechat_check", controller.CheckWechatLogin)
+			user.GET("check_name", controller.CheckUsernameExist)
+			user.POST("register", controller.Register)
+		}
+
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
-		authed.GET("home", controller.GetMsg)
+		authed.GET("/user/home", controller.GetMsg)
+
 	}
 	return router
 }

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"PushSystem/api"
 	"PushSystem/config"
 	"PushSystem/model"
 	"PushSystem/resp"
@@ -36,8 +37,9 @@ func Login(ctx *gin.Context) {
 		t := map[string]string{
 			"token": token,
 		}
-		_, err = userService.SetRedisUser(user)
-		if err != nil {
+		ok := userService.SetRedisUser(user)
+		if !ok {
+
 			return
 		}
 		r := resp.NewSuccessResp(resp.WithData(t))
@@ -45,6 +47,47 @@ func Login(ctx *gin.Context) {
 	} else {
 		r := resp.NewInvalidResp(resp.WithMessage("用户名或密码错误"))
 		ctx.JSON(resp.SUCCESS, r)
+	}
+}
+
+func GetWechatQR(ctx *gin.Context) {
+	r := api.GetWechatQR()
+	if r.Data.ExpireSeconds > 0 {
+		response := resp.NewSuccessResp(resp.WithData(r.Data))
+		ctx.JSON(resp.SUCCESS, response)
+	} else {
+		ctx.JSON(resp.ERROR, resp.NewErrorResp())
+	}
+}
+
+func CheckWechatLogin(ctx *gin.Context) {
+	token := ctx.PostForm("wechat_token")
+	zap.L().Debug("token: " + token)
+	result := api.CheckQRLogin(token)
+	if result.Uid > 0 {
+		user := service.UserService{}.GetUserByWechatID(result.Uid)
+		if user.ID > 0 {
+			token, err := util.CreateToken(user)
+			if err != nil {
+				zap.L().Error(err.Error())
+			}
+			t := map[string]string{
+				"token": token,
+			}
+			ok := userService.SetRedisUser(user)
+			if !ok {
+				return
+			}
+			r := resp.NewSuccessResp(resp.WithData(t))
+			ctx.JSON(resp.SUCCESS, r)
+
+		} else {
+			ctx.JSON(resp.SUCCESS, resp.NewErrorResp(
+				resp.WithMessage("用户不存在，请注册并绑定微信")))
+		}
+	} else {
+		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(
+			resp.WithMessage("获取微信信息失败")))
 	}
 }
 
@@ -152,6 +195,6 @@ func isBindUser(ctx *gin.Context, user *UserInfo) bool {
 	return true
 }
 
-func (i UserInfo) ToString() string {
-	return fmt.Sprintf("%+v", i)
+func (u UserInfo) ToString() string {
+	return fmt.Sprintf("%+v", u)
 }

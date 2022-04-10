@@ -4,7 +4,6 @@ import (
 	"PushSystem/model"
 	"PushSystem/resp"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 	"time"
 )
@@ -16,9 +15,11 @@ func GlobeLimitRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		t, _ := model.GetClientIP(ctx.ClientIP())
 		if time.Now().Unix() > t {
-			err := model.SetClientIP(ctx.ClientIP())
-			if err != nil {
-				zap.L().Error(err.Error())
+			ok := model.SetClientIP(ctx.ClientIP())
+			if !ok {
+				ctx.JSON(resp.ERROR, resp.NewErrorResp())
+				ctx.Abort()
+				return
 			}
 		} else {
 			ctx.JSON(resp.ERROR, resp.NewErrorResp(resp.WithMessage("访问频率过快，请稍后访问")))
@@ -33,9 +34,11 @@ func ApiLimitRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		t, _ := model.GetClientIP(ctx.ClientIP())
 		if time.Now().Unix() > t {
-			err := model.SetClientIP(ctx.ClientIP())
-			if err != nil {
-				zap.L().Error(err.Error())
+			ok := model.SetClientIP(ctx.ClientIP())
+			if !ok {
+				ctx.JSON(resp.ERROR, resp.NewErrorResp())
+				ctx.Abort()
+				return
 			}
 		} else {
 			ctx.JSON(resp.ERROR, resp.NewErrorResp(resp.WithMessage("访问频率过快，请稍后访问")))

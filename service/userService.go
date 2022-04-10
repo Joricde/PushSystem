@@ -52,6 +52,11 @@ func (u UserService) GetUserByUsername(username string) *model.User {
 	return model.User{}.GetUserByUsername(username)
 }
 
-func (u UserService) SetRedisUser(user *model.User) (string, error) {
+func (u UserService) GetUserByWechatID(wechatID int64) *model.User {
+	return model.User{}.GetUserByWechatID(wechatID)
+
+}
+
+func (u UserService) SetRedisUser(user *model.User) bool {
 	return model.User{}.SetRedisUser(user)
 }
