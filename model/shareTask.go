@@ -10,12 +10,12 @@ type ShareTask struct {
 	gorm.Model
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	UserID uint
-	Task   Task
+	Task   Task `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	TaskID uint
 }
 
-func (t ShareTask) GetAllShareTaskByUserID(userID uint) []Task {
-	var tasks []Task
+func (t ShareTask) GetAllShareTaskByUserID(userID uint) *[]Task {
+	tasks := new([]Task)
 	e := DB.Find(&tasks, Task{UserID: userID}).Error
 	if e != nil {
 		zap.L().Error(e.Error())
@@ -23,8 +23,8 @@ func (t ShareTask) GetAllShareTaskByUserID(userID uint) []Task {
 	return tasks
 }
 
-func (t ShareTask) GetAllShareTaskByUserIDLimit(userID uint, page int, pageSize int) []Task {
-	var shareTask []Task
+func (t ShareTask) GetAllShareTaskByUserIDLimit(userID uint, page int, pageSize int) *[]Task {
+	shareTask := new([]Task)
 	if page == 0 {
 		page = 1
 	}

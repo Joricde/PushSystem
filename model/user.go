@@ -14,36 +14,27 @@ type User struct {
 	Phone    int64  `gorm:"index" json:"phone"`
 	Email    string `gorm:"type:varchar(64); index" json:"email"`
 	WechatID int64  `gorm:"index" json:"wechat_id"`
+	UserPwd  UserPwd
 }
 
 type UserPwd struct {
 	gorm.Model
-	User      User
 	UserID    uint
 	Password  string `gorm:"type:varchar(256);not null" json:"password"`
 	Salt      int64  `gorm:"type:text"`
 	WechatKey string `gorm:"type:varchar(128)" json:"wechat_key"`
 }
 
-func (u User) CreateUser(user *User, pwd *UserPwd) bool {
+func (u User) CreateUser(user *User) bool {
 	err := DB.Create(user).Error
-	b := true
 	if err != nil {
 		zap.L().Error("create user err: " + err.Error())
 		DB.Rollback()
-		b = false
-	} else {
-		pwd.UserID = u.GetUserByUsername(user.Username).ID
-		err = DB.Create(pwd).Error
-		if err != nil {
-			zap.L().Debug("create user err: " + err.Error())
-			DB.Rollback()
-			b = false
-		}
+		return false
 	}
 	zap.L().Debug("create user " + user.Username)
 	DB.Commit()
-	return b
+	return true
 }
 
 func (u User) GetUserPwdByUserID(uid uint) *UserPwd {

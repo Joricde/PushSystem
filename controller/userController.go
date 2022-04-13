@@ -3,33 +3,26 @@ package controller
 import (
 	"PushSystem/api"
 	"PushSystem/config"
-	"PushSystem/model"
 	"PushSystem/resp"
 	"PushSystem/service"
 	"PushSystem/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
-type UserInfo struct {
-	User model.User
-	Pwd  model.UserPwd
-}
-
-var userService = new(service.UserService)
-
 func Login(ctx *gin.Context) {
-	userInfo := new(UserInfo)
-	if !isBindUser(ctx, userInfo) {
+	var userService = new(service.UserService)
+	if !isBindUser(ctx, userService) {
 		return
 	}
-	user := userService.GetUserByUsername(userInfo.User.Username)
+	user := userService.GetUserByUsername(userService.Username)
 	if user.ID == 0 {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名或密码错误")))
 		return
-	} else if userService.IsUserPassword(user.ID, userInfo.Pwd.Password) {
+	} else if userService.IsUserPassword(user.ID, userService.Password) {
 		token, err := util.CreateToken(user)
 		if err != nil {
 			zap.L().Error(err.Error())
@@ -61,30 +54,51 @@ func GetWechatQR(ctx *gin.Context) {
 }
 
 func CheckWechatLogin(ctx *gin.Context) {
+	var userService = new(service.UserService)
 	token := ctx.PostForm("wechat_token")
 	zap.L().Debug("token: " + token)
 	result := api.CheckQRLogin(token)
 	if result.Uid > 0 {
-		user := service.UserService{}.GetUserByWechatID(result.Uid)
-		if user.ID > 0 {
-			token, err := util.CreateToken(user)
-			if err != nil {
-				zap.L().Error(err.Error())
+		zap.L().Debug("GetUserByWechatID  " + strconv.FormatInt(result.Uid, 16))
+		user := userService.GetUserByWechatID(result.Uid)
+		createUser := false
+		zap.L().Debug("GetUserByWechatID " + user.ToString())
+		if user.ID == 0 {
+			for {
+				userService.Salt = time.Now().UnixMilli()
+				userService.Username = strconv.FormatInt(userService.Salt, 16)
+				if !userService.IsUsernameExist(userService.Username) {
+					break
+				}
 			}
-			t := map[string]string{
-				"token": token,
-			}
-			ok := userService.SetRedisUser(user)
-			if !ok {
+			userService.WechatID = result.Uid
+			userService.WechatKey = result.SendKey
+			userService.Password = util.AddSalt(userService.Username, userService.Salt)
+			if userService.CreateUser() {
+				createUser = true
+			} else {
+				ctx.JSON(resp.ERROR, resp.NewErrorResp(resp.WithMessage("创建用户失败")))
 				return
 			}
-			r := resp.NewSuccessResp(resp.WithData(t))
-			ctx.JSON(resp.SUCCESS, r)
-
-		} else {
-			ctx.JSON(resp.SUCCESS, resp.NewErrorResp(
-				resp.WithMessage("用户不存在，请注册并绑定微信")))
 		}
+		user = userService.GetUserByWechatID(result.Uid)
+		token, err := util.CreateToken(user)
+		if err != nil {
+			zap.L().Error(err.Error())
+		}
+		t := map[string]string{
+			"token": token,
+		}
+		ok := userService.SetRedisUser(user)
+		if !ok {
+			return
+		}
+		r := resp.NewSuccessResp(resp.WithData(t), resp.WithMessage("登录成功"))
+		if createUser {
+			r = resp.NewSuccessResp(resp.WithData(t), resp.WithMessage("已经创建用户,请及时修改用户名与密码"))
+		}
+		ctx.JSON(resp.SUCCESS, r)
+
 	} else {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(
 			resp.WithMessage("获取微信信息失败")))
@@ -92,15 +106,15 @@ func CheckWechatLogin(ctx *gin.Context) {
 }
 
 func Register(ctx *gin.Context) {
-	userInfo := new(UserInfo)
-	if !isBindUser(ctx, userInfo) {
+	var userService = new(service.UserService)
+	if !isBindUser(ctx, userService) {
 		return
 	}
-	userInfo.Pwd.Salt = time.Now().UnixMilli()
-	userInfo.Pwd.Password = util.AddSalt(userInfo.Pwd.Password, userInfo.Pwd.Salt)
-	zap.L().Debug(userInfo.ToString())
-	if userService.CreateUser(&userInfo.User, &userInfo.Pwd) {
-		zap.L().Debug("create " + userInfo.ToString())
+	userService.Salt = time.Now().UnixMilli()
+	userService.Password = util.AddSalt(userService.Password, userService.Salt)
+	zap.L().Debug(userService.ToString())
+	if userService.CreateUser() {
+		zap.L().Debug("create " + userService.ToString())
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(
 			map[string]string{
 				"result": resp.GetMessage(resp.SUCCESS),
@@ -110,7 +124,12 @@ func Register(ctx *gin.Context) {
 	}
 }
 
+func RegisterFromWechat(ctx *gin.Context) {
+
+}
+
 func CheckUsernameExist(ctx *gin.Context) {
+	var userService = new(service.UserService)
 	username := ctx.Query("username")
 	if username == "" {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名不能为空")))
@@ -125,14 +144,13 @@ func CheckUsernameExist(ctx *gin.Context) {
 }
 
 func ChangeUserInfo(ctx *gin.Context) {
-	userInfo := new(UserInfo)
-	if !isBindUser(ctx, userInfo) {
+	var userService = new(service.UserService)
+	if !isBindUser(ctx, userService) {
 		return
 	}
-	zap.L().Debug(userInfo.ToString())
+	zap.L().Debug(userService.ToString())
 	uid := ctx.GetUint(config.TokenUID)
-	userInfo.User.ID = uid
-	if userService.SetUserInfo(&userInfo.User) {
+	if userService.SetUserInfoByID(uid) {
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
 	} else {
 		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
@@ -140,6 +158,7 @@ func ChangeUserInfo(ctx *gin.Context) {
 }
 
 func CheckUsePwd(ctx *gin.Context) {
+	var userService = new(service.UserService)
 	pwd := ctx.PostForm("password")
 	uid := ctx.GetUint(config.TokenUID)
 	if pwd == "" {
@@ -155,6 +174,7 @@ func CheckUsePwd(ctx *gin.Context) {
 }
 
 func ChangeUserPWD(ctx *gin.Context) {
+	var userService = new(service.UserService)
 	pwd := ctx.PostForm("password")
 	uid := ctx.GetUint(config.TokenUID)
 	if userService.SetPassword(uid, pwd) {
@@ -165,6 +185,7 @@ func ChangeUserPWD(ctx *gin.Context) {
 }
 
 func ChangeWechatKey(ctx *gin.Context) {
+	var userService = new(service.UserService)
 	WechatKey := ctx.PostForm("wechat_key")
 	uid := ctx.GetUint(config.TokenUID)
 	if userService.SetWechatKey(uid, WechatKey) {
@@ -178,23 +199,19 @@ func RetrievePwd(ctx *gin.Context) {
 
 }
 
-func isBindUser(ctx *gin.Context, user *UserInfo) bool {
+func isBindUser(ctx *gin.Context, user *service.UserService) bool {
 	err := ctx.BindJSON(user)
-	zap.L().Debug(fmt.Sprintln(user.User.Username))
+	zap.L().Debug(fmt.Sprintln(user.Username))
 	if err != nil {
 		zap.L().Error(err.Error())
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp())
 		return false
-	} else if user.User.Username == "" {
+	} else if user.Username == "" {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名为空")))
 		return false
-	} else if user.Pwd.Password == "" {
+	} else if user.Password == "" {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("密码为空")))
 		return false
 	}
 	return true
-}
-
-func (u UserInfo) ToString() string {
-	return fmt.Sprintf("%+v", u)
 }

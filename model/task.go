@@ -44,14 +44,14 @@ func (t Task) CreateTask(task *Task) bool {
 	return b
 }
 
-func (t Task) GetAllTaskByUserID(userID uint) []Task {
-	var tasks []Task
+func (t Task) GetAllTaskByUserID(userID uint) *[]Task {
+	tasks := new([]Task)
 	DB.Find(&tasks, Task{UserID: userID})
 	return tasks
 }
 
-func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) []Task {
-	var shareTask []Task
+func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) *[]Task {
+	shareTask := new([]Task)
 	if page == 0 {
 		page = 1
 	}
@@ -66,7 +66,7 @@ func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) []Tas
 	return shareTask
 }
 
-func (t Task) UpdateTaskByTaskID(task Task) bool {
+func (t Task) UpdateTask(task *Task) bool {
 	err := DB.Model(&task).Updates(Task{}).Error
 	b := true
 	if err != nil {
@@ -76,6 +76,15 @@ func (t Task) UpdateTaskByTaskID(task Task) bool {
 	}
 	zap.L().Debug("create task " + utils.ToString(task.ID))
 	return b
+}
+
+func (t Task) DeleteTaskByTaskID(taskID uint) bool {
+	err := DB.Delete(&t, taskID).Error
+	if err != nil {
+		zap.L().Debug(err.Error())
+		return false
+	}
+	return false
 }
 
 func (t Task) ToString() string {

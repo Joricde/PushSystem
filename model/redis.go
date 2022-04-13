@@ -27,9 +27,6 @@ func (u User) GetRedisUserByID(id uint) *User {
 	switch {
 	case err == redis.Nil:
 		user.ID = 0
-	case err != nil:
-		zap.L().Error(err.Error())
-		user.ID = -1
 	default:
 		_ = json.Unmarshal([]byte(jsUser), user)
 	}
