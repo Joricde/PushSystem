@@ -4,6 +4,7 @@ import (
 	"PushSystem/model"
 	"PushSystem/util"
 	"fmt"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -18,9 +19,13 @@ type UserService struct {
 	WechatKey string `json:"wechat_key"`
 }
 
+var UserModel = new(model.User)
+
 func (u UserService) IsUsernameExist(username string) bool {
 	newUser := new(model.User)
-	newUser = newUser.GetUserByUsername(username)
+	newUser = UserModel.GetUserByUsername(username)
+	zap.L().Debug("username: " + username + " nweUsername: " + newUser.Username)
+	zap.L().Debug(newUser.ToString())
 	if username == newUser.Username {
 		return true
 	} else {
@@ -29,10 +34,9 @@ func (u UserService) IsUsernameExist(username string) bool {
 }
 
 func (u UserService) IsUserPassword(uid uint, password string) bool {
-	newUser := new(model.User)
-	userPwd := newUser.GetUserPwdByUserID(uid)
+	userPwd := UserModel.GetPasswordByUserID(uid)
 	passwordEscape := util.AddSalt(password, userPwd.Salt)
-	if passwordEscape == userPwd.Password {
+	if passwordEscape == userPwd.PasswordHash {
 		return true
 	} else {
 		return false
@@ -46,24 +50,24 @@ func (u UserService) CreateUser() bool {
 		Phone:    u.Phone,
 		Email:    u.Email,
 		WechatID: u.WechatID,
-		UserPwd: model.UserPwd{
-			Password:  u.Password,
-			Salt:      u.Salt,
-			WechatKey: u.WechatKey,
+		Password: model.Password{
+			PasswordHash: u.Password,
+			Salt:         u.Salt,
+			WechatKey:    u.WechatKey,
 		},
 	}
 	return user.CreateUser(&user)
 }
 
 func (u UserService) SetPassword(uid uint, pwd string) bool {
-	userPwd := new(model.UserPwd)
+	userPwd := new(model.Password)
 	userPwd.Salt = time.Now().UnixMilli()
-	userPwd.Password = util.AddSalt(pwd, userPwd.Salt)
-	return model.User{}.UpdateUserPassword(uid, userPwd)
+	userPwd.PasswordHash = util.AddSalt(pwd, userPwd.Salt)
+	return UserModel.UpdatePassword(uid, userPwd)
 }
 
 func (u UserService) SetWechatKey(uid uint, wechatKey string) bool {
-	return model.User{}.UpdateUserWechatKey(uid, wechatKey)
+	return UserModel.UpdateWechatKey(uid, wechatKey)
 }
 
 func (u UserService) SetUserInfoByID(uid uint) bool {
@@ -74,7 +78,7 @@ func (u UserService) SetUserInfoByID(uid uint) bool {
 		Email:    u.Email,
 		WechatID: u.WechatID,
 	}
-	return user.UpdateUserInfo(&user)
+	return UserModel.UpdateUserInfo(&user)
 }
 
 func (u UserService) GetUserByUsername(username string) *model.User {

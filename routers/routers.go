@@ -27,7 +27,7 @@ func SetupRouter() *gin.Engine {
 
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
-		authed.GET("/user/home", controller.GetMsg)
+		authed.GET("/user/home", controller.GetMessage)
 
 	}
 	return router

@@ -131,6 +131,7 @@ func RegisterFromWechat(ctx *gin.Context) {
 func CheckUsernameExist(ctx *gin.Context) {
 	var userService = new(service.UserService)
 	username := ctx.Query("username")
+	zap.L().Debug(username)
 	if username == "" {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名不能为空")))
 		return

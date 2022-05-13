@@ -17,18 +17,23 @@ func (d Dialogue) CreateDialogue(dialogue *Dialogue) error {
 	return err
 }
 
-func (d Dialogue) DeleteDialogueByID(dialogueID uint) {
-
+func (d Dialogue) DeleteDialogueByID() error {
+	e := DB.Delete(d).Error
+	return e
 }
 
-func (g Group) UpdateDialogue(dialogue *Dialogue) error {
+func (d Dialogue) UpdateDialogue(dialogue *Dialogue) error {
 	err := DB.Model(dialogue).Updates(Dialogue{
 		Context: dialogue.Context,
 	}).Error
 	return err
 }
 
-func (d Dialogue) GetDialogueByGroup() {
+func (d Dialogue) GetAllDialogueByGroupID(groupID uint) (*[]Dialogue, error) {
+	dialogues := new([]Dialogue)
+	e := DB.Model(Group{Model: gorm.Model{ID: groupID}}).
+		Association("Dialogues").Find(dialogues)
+	return dialogues, e
 }
 
 func (d Dialogue) ToString() string {

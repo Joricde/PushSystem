@@ -11,8 +11,8 @@ type Group struct {
 	Title     string
 	IsShare   bool
 	IsCreator bool
-	Task      []Task
-	Dialogue  []Dialogue
+	Tasks     []Task
+	Dialogues []Dialogue
 }
 
 type UserGroup struct {

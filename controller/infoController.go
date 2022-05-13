@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetMsg(ctx *gin.Context) {
+func GetMessage(ctx *gin.Context) {
 	user := new(model.User)
 	err := ctx.BindJSON(user)
 	if err != nil {
@@ -23,11 +23,11 @@ func GetMsg(ctx *gin.Context) {
 		ctx.JSON(resp.InvalidParams, resp.NewInvalidResp(resp.WithMessage("无权访问")))
 		return
 	}
-	data := service.MsgService{}.GetAllTaskByUserID(userID)
+	data := service.MessageService{}.GetAllTaskByUserID(userID)
 	ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(data)))
 	zap.L().Debug("resp")
 }
 
-func SetMsg(ctx *gin.Context) {
+func SetMessage(ctx *gin.Context) {
 
 }
