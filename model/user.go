@@ -9,21 +9,24 @@ import (
 // User Model
 type User struct {
 	gorm.Model
-	Username string `gorm:"type:varchar(64);not null;unique;index" json:"username"`
+	Username string `gorm:"type:varchar(64);not null;index" json:"username"`
 	Nickname string `gorm:"type:varchar(64)" json:"nickname"`
 	Phone    int64  `gorm:"index" json:"phone"`
 	Email    string `gorm:"type:varchar(64); index" json:"email"`
 	WechatID int64  `gorm:"index" json:"wechat_id"`
-	UserPwd  UserPwd
+	Password Password
+	Groups   []Group `gorm:"many2many:user_groups"`
+	Dialogue []Dialogue
 }
 
-type UserPwd struct {
-	gorm.Model
-	UserID    uint
-	Password  string `gorm:"type:varchar(256);not null" json:"password"`
-	Salt      int64  `gorm:"type:text"`
-	WechatKey string `gorm:"type:varchar(128)" json:"wechat_key"`
-}
+//func (User) BeforeCreate(tx *gorm.DB) (err error) {
+//	err = DB.SetupJoinTable(&User{}, "Group", UserGroup{})
+//	if err != nil {
+//		zap.L().Error("create join table err " + err.Error())
+//		fmt.Println("create join table err " + err.Error())
+//	}
+//	return err
+//}
 
 func (u User) CreateUser(user *User) bool {
 	err := DB.Create(user).Error
@@ -37,10 +40,31 @@ func (u User) CreateUser(user *User) bool {
 	return true
 }
 
-func (u User) GetUserPwdByUserID(uid uint) *UserPwd {
-	userPwd := new(UserPwd)
-	DB.Where("user_id = ?", uid).First(userPwd)
-	return userPwd
+func (u User) DeleteUserByID(userID uint) bool {
+	e := DB.Where("id = ?", userID).Delete(&User{}).Error
+	if e != nil {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
+}
+
+func (u User) UpdateUserInfo(user *User) bool {
+	newUser := new(User)
+	e := DB.Model(newUser).Updates(User{
+		Username: user.Username,
+		Nickname: user.Nickname,
+		Phone:    user.Phone,
+		Email:    user.Email,
+		WechatID: user.WechatID,
+	}).Error
+	if len(e.Error()) > 0 {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
 }
 
 func (u User) GetUserByUsername(username string) *User {
@@ -67,58 +91,32 @@ func (u User) GetUserByWechatID(wechatId int64) *User {
 	return user
 }
 
-func (u User) UpdateUserInfo(user *User) bool {
-	newUser := new(User)
-	e := DB.Model(newUser).Updates(User{
-		Username: user.Username,
-		Nickname: user.Nickname,
-		Phone:    user.Phone,
-		Email:    user.Email,
-		WechatID: user.WechatID,
-	}).Error
-	if len(e.Error()) > 0 {
-		zap.L().Error(e.Error())
-		return false
-	} else {
-		return true
-	}
+func (u User) AppendGroup(group *Group) error {
+	e := DB.Model(&u).Association("Groups").Append(group)
+	return e
 }
 
-func (u User) UpdateUserPassword(uid uint, pwd *UserPwd) bool {
-	e := DB.Model(UserPwd{}).Where("user_id = ? ", uid).Updates(UserPwd{
-		Password: pwd.Password,
-		Salt:     pwd.Salt,
-	}).Error
-	if len(e.Error()) > 0 {
-		zap.L().Error(e.Error())
-		return false
-	} else {
-		return true
-	}
+func (u User) DeleteGroup(group *Group) error {
+	e := DB.Model(&u).Association("Groups").Delete(group)
+	return e
 }
 
-func (u User) UpdateUserWechatKey(uid uint, wechatKey string) bool {
-	e := DB.Model(UserPwd{}).Where("user_id = ? ", uid).Updates(UserPwd{
-		WechatKey: wechatKey,
-	}).Error
-	if len(e.Error()) > 0 {
-		zap.L().Error(e.Error())
-		return false
-	} else {
-		return true
-	}
+func (u User) SetGroupSortByGroupID(userGroup *UserGroup) error {
+	e := DB.Model(userGroup).Where("group_id = ? and user_id = ?",
+		userGroup.GroupID, userGroup.UserID).Update("sort = ?", userGroup.Sort).Error
+	return e
 }
 
-func (u User) DeleteUserByID(uid uint) bool {
-	e := DB.Where("id = ?", uid).Delete(&User{}).Error
-	if e != nil {
-		zap.L().Error(e.Error())
-		return false
-	} else {
-		return true
-	}
+func (u User) GetAllGroupByUserID(userID uint) (*[]Group, error) {
+	groups := new([]Group)
+	e := DB.Model(&u).Association("Groups").Find(&groups)
+	return groups, e
 }
 
 func (u User) ToString() string {
 	return fmt.Sprintf("%+v", u)
+}
+
+func (g UserGroup) ToString() string {
+	return fmt.Sprintf("%+v", g)
 }

@@ -10,18 +10,16 @@ import (
 
 type Task struct {
 	gorm.Model
-	User            User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	UserID          uint
+	GroupID         uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Tile            string
 	Context         string
 	Level           int
-	Reminder        string
+	Reminder        time.Time
 	Deadline        time.Time
 	RepetitionCycle int
 	AppendixHash    string `json:"appendix_hash"`
 	AppendixName    string `json:"appendix_name"`
-	Group           string
-	Sort            int
+	sort            int
 }
 
 const (
@@ -44,26 +42,13 @@ func (t Task) CreateTask(task *Task) bool {
 	return b
 }
 
-func (t Task) GetAllTaskByUserID(userID uint) *[]Task {
-	tasks := new([]Task)
-	DB.Find(&tasks, Task{UserID: userID})
-	return tasks
-}
-
-func (t Task) GetAllTaskByUserIDLimit(userID uint, page int, pageSize int) *[]Task {
-	shareTask := new([]Task)
-	if page == 0 {
-		page = 1
+func (t Task) DeleteTaskByTaskID(taskID uint) bool {
+	err := DB.Delete(&t, taskID).Error
+	if err != nil {
+		zap.L().Debug(err.Error())
+		return false
 	}
-	switch {
-	case pageSize > 100:
-		pageSize = 100
-	case pageSize <= 0:
-		pageSize = 10
-	}
-	offset := (page - 1) * pageSize
-	DB.Offset(offset).Find(&userID, Task{UserID: userID}).Limit(pageSize)
-	return shareTask
+	return false
 }
 
 func (t Task) UpdateTask(task *Task) bool {
@@ -78,13 +63,26 @@ func (t Task) UpdateTask(task *Task) bool {
 	return b
 }
 
-func (t Task) DeleteTaskByTaskID(taskID uint) bool {
-	err := DB.Delete(&t, taskID).Error
-	if err != nil {
-		zap.L().Debug(err.Error())
-		return false
+func (t Task) GetAllTaskByGroupID(GroupID uint) *[]Task {
+	tasks := new([]Task)
+	DB.Find(&tasks, Task{GroupID: GroupID})
+	return tasks
+}
+
+func (t Task) GetAllTaskByGroupIDLimit(GroupID uint, page int, pageSize int) *[]Task {
+	shareTask := new([]Task)
+	if page == 0 {
+		page = 1
 	}
-	return false
+	switch {
+	case pageSize > 100:
+		pageSize = 100
+	case pageSize <= 0:
+		pageSize = 10
+	}
+	offset := (page - 1) * pageSize
+	DB.Offset(offset).Find(&GroupID, Task{GroupID: GroupID}).Limit(pageSize)
+	return shareTask
 }
 
 func (t Task) ToString() string {

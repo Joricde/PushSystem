@@ -32,7 +32,6 @@ func init() {
 			Colorful:                  true,
 		},
 	)
-
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		zap.L().Error(err.Error())
@@ -44,8 +43,14 @@ func init() {
 }
 
 func migration() {
-	err := DB.Set("gorm:table_options", "charset=utf8mb4").
-		AutoMigrate(&User{}, &Task{}, &UserPwd{})
+	err := DB.SetupJoinTable(&User{}, "Groups", &UserGroup{})
+	if err != nil {
+		zap.L().Error("create join table err " + err.Error())
+		fmt.Println("create join table err " + err.Error())
+		panic(err)
+	}
+	err = DB.Set("gorm:table_options", "charset=utf8mb4").
+		AutoMigrate(&User{}, &Password{}, &Task{}, &Dialogue{})
 	if err != nil {
 		zap.L().Error(err.Error())
 		return
