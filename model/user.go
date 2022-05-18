@@ -95,44 +95,6 @@ func (u User) RetrieveByWechatID(wechatId int64) *User {
 	return user
 }
 
-func (u User) AppendGroup(userGroup *UserGroup, group *Group) error {
-	e := DB.Create(&group).Error
-	if e != nil {
-		return e
-	}
-	userGroup.GroupID = group.ID
-	e = DB.Create(userGroup).Error
-	if e != nil {
-		return e
-	}
-	zap.L().Debug(fmt.Sprintln(userGroup))
-	return e
-}
-
-func (u User) DeleteGroup(userID, groupID uint) error {
-	e := DB.Model(&User{Model: gorm.Model{
-		ID: userID,
-	}}).Association("Groups").Delete(Group{Model: gorm.Model{
-		ID: groupID,
-	}})
-	return e
-}
-
-func (u User) SetGroupSortByGroupID(userGroup *UserGroup) error {
-	e := DB.Model(userGroup).Where("group_id = ? and user_id = ?",
-		userGroup.GroupID, userGroup.UserID).Update("sort = ?", userGroup.Sort).Error
-	return e
-}
-
-func (u User) GetAllGroupByUserID(userID uint) ([]Group, error) {
-	var groups []Group
-	e := DB.Model(&User{Model: gorm.Model{
-		ID: userID,
-	}}).Association("Groups").Find(&groups)
-	zap.L().Debug(fmt.Sprintln(groups))
-	return groups, e
-}
-
 func (u User) ToString() string {
 	return fmt.Sprintf("%+v", u)
 }

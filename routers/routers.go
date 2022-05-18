@@ -26,8 +26,12 @@ func SetupRouter() *gin.Engine {
 		}
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
-		authed.GET("group", controller.GetGroup)
-		authed.POST("group", controller.AddGroup)
+		{
+			authed.GET("group", controller.GetGroup)
+			authed.POST("group", controller.AddGroup)
+			authed.PUT("group", controller.UpdateGroup)
+			authed.DELETE("group", controller.DeleteGroup)
+		}
 		//authed.POST("group")
 
 	}

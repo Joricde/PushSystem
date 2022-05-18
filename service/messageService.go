@@ -2,18 +2,25 @@ package service
 
 import (
 	"PushSystem/model"
+	"fmt"
+	"go.uber.org/zap"
 	"time"
 )
 
 type MessageService struct {
-	ID        uint
+	GroupID   uint
+	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
 	IsShare   bool
+	IsCreator bool
 	Sort      int
 }
 
-var GroupModel = new(model.Group)
+var (
+	GroupModel     = new(model.Group)
+	UserGroupModel = new(model.UserGroup)
+)
 
 func (m MessageService) AddGroup(userID uint, service *MessageService) error {
 	group := model.Group{
@@ -21,18 +28,23 @@ func (m MessageService) AddGroup(userID uint, service *MessageService) error {
 		IsShare: service.IsShare,
 	}
 	userGroup := model.UserGroup{
-		UserID: userID,
-		Sort:   service.Sort,
+		UserID:    userID,
+		Sort:      service.Sort,
+		IsCreator: true,
 	}
-	err := UserModel.AppendGroup(&userGroup, &group)
+	err := GroupModel.AppendGroup(&userGroup, &group)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m MessageService) DeleteGroupByGroupID(UserID, GroupID uint) error {
-	err := UserModel.DeleteGroup(UserID, GroupID)
+func (m MessageService) DeleteGroupByGroupID(userID, groupID uint) error {
+	userGroup := model.UserGroup{
+		UserID:  userID,
+		GroupID: groupID,
+	}
+	err := GroupModel.DeleteGroup(&userGroup)
 	if err != nil {
 		return err
 	}
@@ -41,18 +53,18 @@ func (m MessageService) DeleteGroupByGroupID(UserID, GroupID uint) error {
 
 func (m MessageService) SetGroupSort(UserID, GroupID uint, sort int) error {
 	userGroup := model.UserGroup{GroupID: GroupID, UserID: UserID, Sort: sort}
-	err := UserModel.SetGroupSortByGroupID(&userGroup)
+	err := UserGroupModel.UpdateGroupSortByGroupID(&userGroup)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m MessageService) SetGroupInfo(groupID uint, service *MessageService) error {
+func (m MessageService) SetGroupInfo(service *MessageService) error {
 	group := new(model.Group)
-	group.ID = groupID
+	group.ID = service.GroupID
 	group.Title = service.Title
-	group.IsShare = service.IsShare
+	zap.L().Debug(fmt.Sprint(group))
 	err := GroupModel.Update(group)
 	if err != nil {
 		return err
@@ -60,21 +72,43 @@ func (m MessageService) SetGroupInfo(groupID uint, service *MessageService) erro
 	return nil
 }
 
+func (m MessageService) SetGroupShare(groupID uint) {
+	group := new(model.Group)
+	group.ID = groupID
+	group.Update(group)
+}
+
+func (m MessageService) IsBelongToUser(userID, groupID uint) (bool, error) {
+	g := model.UserGroup{}
+	userGroup, err := g.RetrieveGroupIDByUserID(userID, groupID)
+	if err != nil {
+		return false, err
+	}
+	if userGroup.UserID != 0 {
+		return true, nil
+	}
+	return false, nil
+
+}
+
 //func (m MessageService) GetShareGroupCode(groupID uint) error {
 //
 //}
 
 func (m MessageService) GetAllGroupsByUserID(userID uint) ([]MessageService, error) {
-	g, err := UserModel.GetAllGroupByUserID(userID)
+	g, err := GroupModel.GetAllGroupsByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 	groupsService := make([]MessageService, len(g))
 	for i, group := range g {
-		groupsService[i].ID = group.ID
+		groupsService[i].GroupID = group.ID
+		groupsService[i].UpdatedAt = group.UpdatedAt
+		groupsService[i].CreatedAt = group.CreatedAt
 		groupsService[i].Title = group.Title
 		groupsService[i].IsShare = group.IsShare
-		groupsService[i].UpdatedAt = group.UpdatedAt
+		groupsService[i].IsCreator = group.IsCreator
+		groupsService[i].Sort = group.Sort
 	}
 	return groupsService, err
 }

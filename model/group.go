@@ -1,15 +1,17 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Group struct {
 	gorm.Model
 	Title     string
-	IsShare   bool
+	IsShare   bool `gorm:"default false"`
 	Tasks     []Task
 	Dialogues []Dialogue
 }
@@ -20,7 +22,17 @@ type UserGroup struct {
 	UserID    uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	GroupID   uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Sort      int
+	IsCreator bool `gorm:"default true"`
+}
+
+type ServiceGroup struct {
+	ID        uint
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Title     string
+	IsShare   bool
 	IsCreator bool
+	Sort      int
 }
 
 func (g Group) Create(group *Group) error {
@@ -69,6 +81,48 @@ func (g Group) GetGroupByID(groupID uint) (*Group, error) {
 	return group, nil
 }
 
+func (g Group) AppendGroup(userGroup *UserGroup, group *Group) error {
+	e := DB.Create(&group).Error
+	if e != nil {
+		return e
+	}
+	userGroup.GroupID = group.ID
+	e = DB.Create(userGroup).Error
+	if e != nil {
+		return e
+	}
+	zap.L().Debug(fmt.Sprintln(userGroup))
+	return e
+}
+
+func (g Group) DeleteGroup(userGroup *UserGroup) error {
+	e := DB.Where(&UserGroup{
+		UserID:  userGroup.UserID,
+		GroupID: userGroup.GroupID,
+	}).Delete(userGroup).Error
+	if e != nil {
+		return e
+	}
+	return e
+}
+
+func (g UserGroup) UpdateGroupSortByGroupID(userGroup *UserGroup) error {
+	e := DB.Model(userGroup).Where("group_id = ? and user_id = ?",
+		userGroup.GroupID, userGroup.UserID).Update("sort = ?", userGroup.Sort).Error
+	return e
+}
+
+func (g Group) GetAllGroupsByUserID(userID uint) ([]ServiceGroup, error) {
+	var serviceGroups []ServiceGroup
+	e := DB.Model(&Group{}).
+		Select("*").
+		Joins("inner join user_groups ug on ug.group_id = groups.id").
+		Where("ug.user_id = ?", userID).
+		Scan(&serviceGroups).Error
+	zap.L().Debug(fmt.Sprintln(serviceGroups))
+	return serviceGroups, e
+}
+
 func (g Group) GetAllGroupByUserIDLimit(userID uint, page int, pageSize int) []Task {
 	var shareTask []Task
 	if page == 0 {
@@ -83,6 +137,26 @@ func (g Group) GetAllGroupByUserIDLimit(userID uint, page int, pageSize int) []T
 	offset := (page - 1) * pageSize
 	DB.Offset(offset).Find(&shareTask).Limit(pageSize)
 	return shareTask
+}
+
+func (g UserGroup) RetrieveByUserID(userID uint) ([]UserGroup, error) {
+	var userGroup []UserGroup
+	e := DB.Find(&userGroup).Error
+	if e != nil {
+		return nil, e
+	}
+	return userGroup, nil
+
+}
+
+func (g UserGroup) RetrieveGroupIDByUserID(userID, groupID uint) (*UserGroup, error) {
+	userGroup := new(UserGroup)
+	e := DB.Where(UserGroup{UserID: userID, GroupID: groupID}).First(userGroup).Error
+	zap.L().Debug(fmt.Sprintln(userGroup))
+	if e != nil && !errors.Is(e, gorm.ErrRecordNotFound) {
+		return userGroup, e
+	}
+	return userGroup, nil
 }
 
 func (g Group) ToString() string {
