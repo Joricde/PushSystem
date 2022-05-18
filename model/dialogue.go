@@ -12,27 +12,33 @@ type Dialogue struct {
 	Context string
 }
 
-func (d Dialogue) CreateDialogue(dialogue *Dialogue) error {
+func (d Dialogue) Create(dialogue *Dialogue) error {
 	err := DB.Create(dialogue).Error
 	return err
 }
 
-func (d Dialogue) DeleteDialogueByID() error {
-	e := DB.Delete(d).Error
+func (d Dialogue) DeleteByID(dialogueID uint) error {
+	e := DB.Delete(&Dialogue{}, dialogueID).Error
 	return e
 }
 
-func (d Dialogue) UpdateDialogue(dialogue *Dialogue) error {
+func (d Dialogue) Update(dialogue *Dialogue) error {
 	err := DB.Model(dialogue).Updates(Dialogue{
 		Context: dialogue.Context,
 	}).Error
 	return err
 }
 
-func (d Dialogue) GetAllDialogueByGroupID(groupID uint) (*[]Dialogue, error) {
-	dialogues := new([]Dialogue)
+func (d Dialogue) GetDialogueByID(groupID uint) ([]Dialogue, error) {
+	var dialogue []Dialogue
+	e := DB.Where("id = ?", groupID).First(&dialogue).Error
+	return dialogue, e
+}
+
+func (d Dialogue) GetAllDialogueByGroupID(groupID uint) ([]Dialogue, error) {
+	var dialogues []Dialogue
 	e := DB.Model(Group{Model: gorm.Model{ID: groupID}}).
-		Association("Dialogues").Find(dialogues)
+		Association("Dialogues").Find(&dialogues)
 	return dialogues, e
 }
 

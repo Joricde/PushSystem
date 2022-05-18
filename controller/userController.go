@@ -19,6 +19,7 @@ func Login(ctx *gin.Context) {
 		return
 	}
 	user := userService.GetUserByUsername(userService.Username)
+	zap.L().Debug(fmt.Sprintln(user))
 	if user.ID == 0 {
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp(resp.WithMessage("用户名或密码错误")))
 		return
@@ -59,10 +60,10 @@ func CheckWechatLogin(ctx *gin.Context) {
 	zap.L().Debug("token: " + token)
 	result := api.CheckQRLogin(token)
 	if result.Uid > 0 {
-		zap.L().Debug("GetUserByWechatID  " + strconv.FormatInt(result.Uid, 16))
+		zap.L().Debug("RetrieveByWechatID  " + strconv.FormatInt(result.Uid, 16))
 		user := userService.GetUserByWechatID(result.Uid)
 		createUser := false
-		zap.L().Debug("GetUserByWechatID " + user.ToString())
+		zap.L().Debug("RetrieveByWechatID " + user.ToString())
 		if user.ID == 0 {
 			for {
 				userService.Salt = time.Now().UnixMilli()

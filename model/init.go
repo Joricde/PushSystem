@@ -38,7 +38,8 @@ func init() {
 		return
 	}
 	DB = db
-	migration()
+	// TODO 修改model后使用
+	//migration()
 	connectRedis()
 }
 

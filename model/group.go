@@ -10,7 +10,6 @@ type Group struct {
 	gorm.Model
 	Title     string
 	IsShare   bool
-	IsCreator bool
 	Tasks     []Task
 	Dialogues []Dialogue
 }
@@ -21,40 +20,43 @@ type UserGroup struct {
 	UserID    uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	GroupID   uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Sort      int
+	IsCreator bool
 }
 
-func (g Group) CreateGroup(group *Group) (bool, error) {
+func (g Group) Create(group *Group) error {
 	err := DB.Create(group).Error
 	if err != nil {
 		zap.L().Error("create group error :" + err.Error())
-		return false, err
+		DB.Rollback()
+		return err
 	}
 	DB.Commit()
-	return true, nil
+	return nil
 }
 
-func (g Group) DeleteGroupByID(group *Group) (bool, error) {
-	err := DB.Delete(group).Error
+func (g Group) DeleteByID(groupID uint) error {
+	err := DB.Delete(&Group{}, groupID).Error
 	if err != nil {
 		zap.L().Error("create group error :" + err.Error())
-		return false, err
+		DB.Rollback()
+		return err
 	}
 	DB.Commit()
-	return true, nil
+	return nil
 }
 
-func (g Group) UpdateGroup(group *Group) (bool, error) {
+func (g Group) Update(group *Group) error {
 	err := DB.Model(group).Updates(Group{
-		IsShare:   group.IsShare,
-		IsCreator: group.IsCreator,
-		Title:     group.Title,
+		IsShare: group.IsShare,
+		Title:   group.Title,
 	}).Error
 	if err != nil {
 		zap.L().Error("create group error :" + err.Error())
-		return false, err
+		DB.Rollback()
+		return err
 	}
 	DB.Commit()
-	return true, nil
+	return nil
 }
 
 func (g Group) GetGroupByID(groupID uint) (*Group, error) {
@@ -67,8 +69,8 @@ func (g Group) GetGroupByID(groupID uint) (*Group, error) {
 	return group, nil
 }
 
-func (g Group) GetAllGroupByUserIDLimit(userID uint, page int, pageSize int) *[]Task {
-	shareTask := new([]Task)
+func (g Group) GetAllGroupByUserIDLimit(userID uint, page int, pageSize int) []Task {
+	var shareTask []Task
 	if page == 0 {
 		page = 1
 	}
@@ -79,7 +81,7 @@ func (g Group) GetAllGroupByUserIDLimit(userID uint, page int, pageSize int) *[]
 		pageSize = 10
 	}
 	offset := (page - 1) * pageSize
-	DB.Offset(offset).Find(&userID).Limit(pageSize)
+	DB.Offset(offset).Find(&shareTask).Limit(pageSize)
 	return shareTask
 }
 

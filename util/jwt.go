@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+type Token struct {
+	UserID   uint
+	UserName string
+	Exp      int64
+}
+
 func CreateToken(user *model.User) (string, error) {
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		config.TokenUID:      user.ID,
@@ -21,7 +27,7 @@ func CreateToken(user *model.User) (string, error) {
 	return token, nil
 }
 
-func ParseToken(tokenString string) (jwt.MapClaims, error) {
+func ParseToken(tokenString string) (*Token, error) {
 	claim, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -33,7 +39,12 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	}
 	claims, ok := claim.Claims.(jwt.MapClaims)
 	if ok && claim.Valid {
-		return claims, err
+		token := Token{
+			UserID:   uint(claims[config.TokenUID].(float64)),
+			UserName: claims[config.TokenUsername].(string),
+			Exp:      int64(claims[config.TokenEXP].(float64)),
+		}
+		return &token, err
 	} else {
 		return nil, fmt.Errorf("params token error ")
 	}

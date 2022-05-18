@@ -22,14 +22,14 @@ func JWT() gin.HandlerFunc {
 				r := resp.NewInvalidResp(resp.WithMessage("token错误"))
 				ctx.JSON(code, r)
 				ctx.Abort()
-			} else if time.Now().Unix() > claims[config.TokenEXP].(int64) {
+			} else if time.Now().Unix() > claims.Exp {
 				r := resp.NewInvalidResp(resp.WithMessage("token已超时"))
 				ctx.JSON(code, r)
 				ctx.Abort()
 			} else {
 				code = resp.SUCCESS
-				ctx.Set(config.HeadUserID, claims[config.TokenUID])
-				ctx.Set(config.HeadUsername, claims[config.TokenUsername])
+				ctx.Set(config.HeadUserID, claims.UserID)
+				ctx.Set(config.HeadUsername, claims.UserName)
 				ctx.Next()
 			}
 		}

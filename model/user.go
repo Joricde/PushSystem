@@ -28,7 +28,7 @@ type User struct {
 //	return err
 //}
 
-func (u User) CreateUser(user *User) bool {
+func (u User) Create(user *User) bool {
 	err := DB.Create(user).Error
 	if err != nil {
 		zap.L().Error("create user err: " + err.Error())
@@ -36,21 +36,10 @@ func (u User) CreateUser(user *User) bool {
 		return false
 	}
 	zap.L().Debug("create user " + user.Username)
-	DB.Commit()
 	return true
 }
 
-func (u User) DeleteUserByID(userID uint) bool {
-	e := DB.Where("id = ?", userID).Delete(&User{}).Error
-	if e != nil {
-		zap.L().Error(e.Error())
-		return false
-	} else {
-		return true
-	}
-}
-
-func (u User) UpdateUserInfo(user *User) bool {
+func (u User) UpdateInfo(user *User) bool {
 	newUser := new(User)
 	e := DB.Model(newUser).Updates(User{
 		Username: user.Username,
@@ -67,37 +56,65 @@ func (u User) UpdateUserInfo(user *User) bool {
 	}
 }
 
-func (u User) GetUserByUsername(username string) *User {
+func (u User) RetrievePasswordByUserID(userID uint) error {
+	e := DB.Where("id = ? ", userID).First(&u).Error
+	return e
+}
+
+func (u User) DeleteByUserID(userID uint) bool {
+	e := DB.Where("id = ?", userID).Delete(&User{}).Error
+	if e != nil {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
+}
+
+func (u User) RetrieveByUsername(username string) *User {
 	user := new(User)
 	DB.Where(&User{Username: username}).First(user)
 	return user
 }
 
-func (u User) GetUserByPhone(phone int64) *User {
+func (u User) RetrieveByPhone(phone int64) *User {
 	user := new(User)
 	DB.Where(&User{Phone: phone}).First(user)
 	return user
 }
 
-func (u User) GetUserByEmail(email string) *User {
+func (u User) RetrieveByEmail(email string) *User {
 	user := new(User)
 	DB.Where(&User{Email: email}).First(user)
 	return user
 }
 
-func (u User) GetUserByWechatID(wechatId int64) *User {
+func (u User) RetrieveByWechatID(wechatId int64) *User {
 	user := new(User)
 	DB.Where(&User{WechatID: wechatId}).First(user)
 	return user
 }
 
-func (u User) AppendGroup(group *Group) error {
-	e := DB.Model(&u).Association("Groups").Append(group)
+func (u User) AppendGroup(userGroup *UserGroup, group *Group) error {
+	e := DB.Create(&group).Error
+	if e != nil {
+		return e
+	}
+	userGroup.GroupID = group.ID
+	e = DB.Create(userGroup).Error
+	if e != nil {
+		return e
+	}
+	zap.L().Debug(fmt.Sprintln(userGroup))
 	return e
 }
 
-func (u User) DeleteGroup(group *Group) error {
-	e := DB.Model(&u).Association("Groups").Delete(group)
+func (u User) DeleteGroup(userID, groupID uint) error {
+	e := DB.Model(&User{Model: gorm.Model{
+		ID: userID,
+	}}).Association("Groups").Delete(Group{Model: gorm.Model{
+		ID: groupID,
+	}})
 	return e
 }
 
@@ -107,9 +124,12 @@ func (u User) SetGroupSortByGroupID(userGroup *UserGroup) error {
 	return e
 }
 
-func (u User) GetAllGroupByUserID(userID uint) (*[]Group, error) {
-	groups := new([]Group)
-	e := DB.Model(&u).Association("Groups").Find(&groups)
+func (u User) GetAllGroupByUserID(userID uint) ([]Group, error) {
+	var groups []Group
+	e := DB.Model(&User{Model: gorm.Model{
+		ID: userID,
+	}}).Association("Groups").Find(&groups)
+	zap.L().Debug(fmt.Sprintln(groups))
 	return groups, e
 }
 

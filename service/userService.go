@@ -5,6 +5,7 @@ import (
 	"PushSystem/util"
 	"fmt"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -23,7 +24,7 @@ var UserModel = new(model.User)
 
 func (u UserService) IsUsernameExist(username string) bool {
 	newUser := new(model.User)
-	newUser = UserModel.GetUserByUsername(username)
+	newUser = UserModel.RetrieveByUsername(username)
 	zap.L().Debug("username: " + username + " nweUsername: " + newUser.Username)
 	zap.L().Debug(newUser.ToString())
 	if username == newUser.Username {
@@ -56,7 +57,8 @@ func (u UserService) CreateUser() bool {
 			WechatKey:    u.WechatKey,
 		},
 	}
-	return user.CreateUser(&user)
+
+	return user.Create(&user)
 }
 
 func (u UserService) SetPassword(uid uint, pwd string) bool {
@@ -70,23 +72,24 @@ func (u UserService) SetWechatKey(uid uint, wechatKey string) bool {
 	return UserModel.UpdateWechatKey(uid, wechatKey)
 }
 
-func (u UserService) SetUserInfoByID(uid uint) bool {
+func (u UserService) SetUserInfoByID(userID uint) bool {
 	user := model.User{
+		Model:    gorm.Model{ID: userID},
 		Username: u.Username,
 		Nickname: u.Nickname,
 		Phone:    u.Phone,
 		Email:    u.Email,
 		WechatID: u.WechatID,
 	}
-	return UserModel.UpdateUserInfo(&user)
+	return UserModel.UpdateInfo(&user)
 }
 
 func (u UserService) GetUserByUsername(username string) *model.User {
-	return model.User{}.GetUserByUsername(username)
+	return model.User{}.RetrieveByUsername(username)
 }
 
 func (u UserService) GetUserByWechatID(wechatID int64) *model.User {
-	return model.User{}.GetUserByWechatID(wechatID)
+	return model.User{}.RetrieveByWechatID(wechatID)
 
 }
 

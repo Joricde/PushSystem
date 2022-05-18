@@ -29,48 +29,41 @@ const (
 	LevelAVG int = 3
 )
 
-func (t Task) CreateTask(task *Task) bool {
-	newTask := new(Task)
-	err := DB.Create(newTask).Error
-	b := true
-	if err != nil {
-		zap.L().Debug(err.Error())
+func (t Task) Create(task *Task) error {
+	e := DB.Create(task).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
 		DB.Rollback()
-		b = false
 	}
-	zap.L().Debug("create task " + task.Tile)
-	return b
+	return e
 }
 
-func (t Task) DeleteTaskByTaskID(taskID uint) bool {
-	err := DB.Delete(&t, taskID).Error
-	if err != nil {
-		zap.L().Debug(err.Error())
-		return false
+func (t Task) DeleteByID(taskID uint) error {
+	e := DB.Delete(&Task{}, taskID).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
 	}
-	return false
+	return e
 }
 
-func (t Task) UpdateTask(task *Task) bool {
-	err := DB.Model(&task).Updates(Task{}).Error
-	b := true
-	if err != nil {
-		zap.L().Debug(err.Error())
+func (t Task) Update(task *Task) error {
+	e := DB.Model(&task).Updates(Task{}).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
 		DB.Rollback()
-		b = false
 	}
 	zap.L().Debug("create task " + utils.ToString(task.ID))
-	return b
+	return e
 }
 
-func (t Task) GetAllTaskByGroupID(GroupID uint) *[]Task {
-	tasks := new([]Task)
-	DB.Find(&tasks, Task{GroupID: GroupID})
-	return tasks
+func (t Task) GetAllTaskByGroupID(GroupID uint) ([]Task, error) {
+	var tasks []Task
+	e := DB.Find(&tasks, Task{GroupID: GroupID}).Error
+	return tasks, e
 }
 
-func (t Task) GetAllTaskByGroupIDLimit(GroupID uint, page int, pageSize int) *[]Task {
-	shareTask := new([]Task)
+func (t Task) GetAllTaskByGroupIDLimit(GroupID uint, page int, pageSize int) []Task {
+	var shareTask []Task
 	if page == 0 {
 		page = 1
 	}

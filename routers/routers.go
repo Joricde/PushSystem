@@ -14,7 +14,7 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 	router.Static("/static", "static")
 	//router.Use(middleware.GlobeLimitRequest())
-	api := router.Group("api/")
+	api := router.Group("api/v1")
 	{
 		user := api.Group("user")
 		{
@@ -24,10 +24,11 @@ func SetupRouter() *gin.Engine {
 			user.GET("check_name", controller.CheckUsernameExist)
 			user.POST("register", controller.Register)
 		}
-
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
-		authed.GET("/user/home", controller.GetMessage)
+		authed.GET("group", controller.GetGroup)
+		authed.POST("group", controller.AddGroup)
+		//authed.POST("group")
 
 	}
 	return router
