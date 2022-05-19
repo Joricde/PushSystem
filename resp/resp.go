@@ -1,42 +1,18 @@
 package resp
 
-type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
 const (
 	SUCCESS       = 200
 	ERROR         = 500
 	InvalidParams = 400
-
-	ErrorExistUser      = 10002
-	ErrorNotExistUser   = 10003
-	ErrorFailEncryption = 10006
-	ErrorNotCompare     = 10007
-
-	ErrorAuthCheckTokenFail    = 30001
-	ErrorAuthCheckTokenTimeout = 30002
-	ErrorAuthToken             = 30003
-	ErrorAuth                  = 30004
-	ErrorDatabase              = 40001
 )
 
 var Flags = map[int]string{
 	SUCCESS:       "ok",
 	ERROR:         "fail",
 	InvalidParams: "请求参数错误",
-
-	ErrorAuthCheckTokenFail:    "Token鉴权失败",
-	ErrorAuthCheckTokenTimeout: "Token已超时",
-	ErrorAuthToken:             "Token生成失败",
-	ErrorAuth:                  "Token错误",
-	ErrorNotCompare:            "不匹配",
-	ErrorDatabase:              "数据库操作出错,请重试",
 }
 
-func GetMsg(code int) string {
+func GetMessage(code int) string {
 	msg, ok := Flags[code]
 	if ok {
 		return msg

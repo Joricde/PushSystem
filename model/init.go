@@ -8,6 +8,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"time"
 )
 
 var DB *gorm.DB
@@ -19,19 +23,35 @@ func init() {
 	cfg := config.Conf.Mysql
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DB)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  true,
+		},
+	)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		zap.L().Error(err.Error())
 		return
 	}
 	DB = db
-	migration()
+	// TODO 修改model后使用
+	//migration()
 	connectRedis()
 }
 
 func migration() {
-	err := DB.Set("gorm:table_options", "charset=utf8mb4").
-		AutoMigrate(&User{}, &Task{})
+	err := DB.SetupJoinTable(&User{}, "Groups", &UserGroup{})
+	if err != nil {
+		zap.L().Error("create join table err " + err.Error())
+		fmt.Println("create join table err " + err.Error())
+		panic(err)
+	}
+	err = DB.Set("gorm:table_options", "charset=utf8mb4").
+		AutoMigrate(&User{}, &Password{}, &Task{}, &Dialogue{})
 	if err != nil {
 		zap.L().Error(err.Error())
 		return

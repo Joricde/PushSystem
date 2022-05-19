@@ -14,7 +14,6 @@ func main() {
 }
 
 func run() {
-	//zap.L().Debug(fmt.Sprintln(config.Conf))
 	r := routers.SetupRouter()
 	r.TrustedPlatform = gin.PlatformCloudflare
 	r.Use(util.GinLogger(), util.GinRecovery(true))

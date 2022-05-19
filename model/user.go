@@ -9,42 +9,96 @@ import (
 // User Model
 type User struct {
 	gorm.Model
-	Username  string `gorm:"type:varchar(50);not null;unique;index" json:"username"`
-	Nickname  string `gorm:"type:varchar(50)" json:"nickname"`
-	Password  string `gorm:"type:varchar(256);not null" json:"password"`
-	Salt      int64  `gorm:"type:text"`
-	Phone     int64  `gorm:"index" json:"phone"`
-	Email     string `gorm:"type:varchar(64)" json:"email"`
-	WechatId  int    `gorm:"index" json:"wechat_id"`
-	WechatKey string `gorm:"type:varchar(128)" json:"wechat_key"`
+	Username string `gorm:"type:varchar(64);not null;index" json:"username"`
+	Nickname string `gorm:"type:varchar(64)" json:"nickname"`
+	Phone    int64  `gorm:"index" json:"phone"`
+	Email    string `gorm:"type:varchar(64); index" json:"email"`
+	WechatID int64  `gorm:"index" json:"wechat_id"`
+	Password Password
+	Groups   []Group `gorm:"many2many:user_groups"`
+	Dialogue []Dialogue
 }
 
-func CreateUser(user *User) string {
-	newUser := new(User)
-	r := ""
-	DB.Where("username= ? ", user.Username).First(newUser)
-	if user.Username == newUser.Username {
-		r = "User already exists"
-	} else {
-		err := DB.Create(user).Error
-		if err != nil {
-			r = "create user err: " + err.Error()
-			zap.L().Debug(r)
-			DB.Rollback()
-		}
+//func (User) BeforeCreate(tx *gorm.DB) (err error) {
+//	err = DB.SetupJoinTable(&User{}, "Group", UserGroup{})
+//	if err != nil {
+//		zap.L().Error("create join table err " + err.Error())
+//		fmt.Println("create join table err " + err.Error())
+//	}
+//	return err
+//}
+
+func (u User) Create(user *User) bool {
+	err := DB.Create(user).Error
+	if err != nil {
+		zap.L().Error("create user err: " + err.Error())
+		DB.Rollback()
+		return false
 	}
 	zap.L().Debug("create user " + user.Username)
-	DB.Commit()
-	return r
+	return true
 }
 
-func GetUserByUsername(username string) *User {
+func (u User) UpdateInfo(user *User) bool {
+	newUser := new(User)
+	e := DB.Model(newUser).Updates(User{
+		Username: user.Username,
+		Nickname: user.Nickname,
+		Phone:    user.Phone,
+		Email:    user.Email,
+		WechatID: user.WechatID,
+	}).Error
+	if len(e.Error()) > 0 {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
+}
+
+func (u User) RetrievePasswordByUserID(userID uint) error {
+	e := DB.Where("id = ? ", userID).First(&u).Error
+	return e
+}
+
+func (u User) DeleteByUserID(userID uint) bool {
+	e := DB.Where("id = ?", userID).Delete(&User{}).Error
+	if e != nil {
+		zap.L().Error(e.Error())
+		return false
+	} else {
+		return true
+	}
+}
+
+func (u User) RetrieveByUsername(username string) *User {
 	user := new(User)
 	DB.Where(&User{Username: username}).First(user)
-	zap.L().Debug(fmt.Sprintln(user))
+	return user
+}
+
+func (u User) RetrieveByPhone(phone int64) *User {
+	user := new(User)
+	DB.Where(&User{Phone: phone}).First(user)
+	return user
+}
+
+func (u User) RetrieveByEmail(email string) *User {
+	user := new(User)
+	DB.Where(&User{Email: email}).First(user)
+	return user
+}
+
+func (u User) RetrieveByWechatID(wechatId int64) *User {
+	user := new(User)
+	DB.Where(&User{WechatID: wechatId}).First(user)
 	return user
 }
 
 func (u User) ToString() string {
 	return fmt.Sprintf("%+v", u)
+}
+
+func (g UserGroup) ToString() string {
+	return fmt.Sprintf("%+v", g)
 }

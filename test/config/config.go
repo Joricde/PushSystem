@@ -32,5 +32,4 @@ const (
 	HeadUsername  = TokenUsername
 )
 
-// ExpTime todo 时间
-const ExpTime = time.Hour * 72
+const ExpTime = time.Minute * 30

@@ -10,18 +10,16 @@ import (
 
 type Task struct {
 	gorm.Model
-	User            User
-	UserID          uint
+	GroupID         uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Tile            string
 	Context         string
 	Level           int
-	Reminder        string
+	Reminder        time.Time
 	Deadline        time.Time
 	RepetitionCycle int
 	AppendixHash    string `json:"appendix_hash"`
 	AppendixName    string `json:"appendix_name"`
-	Group           string
-	Sort            int
+	sort            int
 }
 
 const (
@@ -31,26 +29,40 @@ const (
 	LevelAVG int = 3
 )
 
-func CreateTask(task *Task) string {
-	newTask := new(Task)
-	info := ""
-	err := DB.Create(newTask).Error
-	if err != nil {
-		info = "create task err: " + err.Error()
-		zap.L().Debug(info)
+func (t Task) Create(task *Task) error {
+	e := DB.Create(task).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
 		DB.Rollback()
 	}
-	zap.L().Debug("create task " + task.Tile)
-	return info
+	return e
 }
 
-func GetAllTaskByUserID(userID uint) []Task {
+func (t Task) DeleteByID(taskID uint) error {
+	e := DB.Delete(&Task{}, taskID).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
+	}
+	return e
+}
+
+func (t Task) Update(task *Task) error {
+	e := DB.Model(&task).Updates(Task{}).Error
+	if e != nil {
+		zap.L().Debug(e.Error())
+		DB.Rollback()
+	}
+	zap.L().Debug("create task " + utils.ToString(task.ID))
+	return e
+}
+
+func (t Task) GetAllTaskByGroupID(GroupID uint) ([]Task, error) {
 	var tasks []Task
-	DB.Find(&tasks, Task{UserID: userID})
-	return tasks
+	e := DB.Find(&tasks, Task{GroupID: GroupID}).Error
+	return tasks, e
 }
 
-func GetAllTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task {
+func (t Task) GetAllTaskByGroupIDLimit(GroupID uint, page int, pageSize int) []Task {
 	var shareTask []Task
 	if page == 0 {
 		page = 1
@@ -62,20 +74,8 @@ func GetAllTaskByUserIDLimit10(userID uint, page int, pageSize int) []Task {
 		pageSize = 10
 	}
 	offset := (page - 1) * pageSize
-	DB.Offset(offset).Find(&userID, Task{UserID: userID}).Limit(pageSize)
+	DB.Offset(offset).Find(&GroupID, Task{GroupID: GroupID}).Limit(pageSize)
 	return shareTask
-}
-
-func UpdateTaskByTaskID(task Task) string {
-	info := ""
-	err := DB.Model(&task).Updates(Task{}).Error
-	if err != nil {
-		info = "create task err: " + err.Error()
-		zap.L().Debug(info)
-		DB.Rollback()
-	}
-	zap.L().Debug("create task " + utils.ToString(task.ID))
-	return info
 }
 
 func (t Task) ToString() string {

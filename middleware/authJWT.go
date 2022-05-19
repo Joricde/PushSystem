@@ -9,31 +9,29 @@ import (
 )
 
 func JWT() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var code int
-		var data interface{}
-		code = 200
-		token := c.GetHeader("Authorization")
+	return func(ctx *gin.Context) {
+		code := resp.InvalidParams
+		token := ctx.GetHeader("Authorization")
 		if token == "" {
-			code = 404
+			r := resp.NewInvalidResp(resp.WithMessage("token为空"))
+			ctx.JSON(code, r)
+			ctx.Abort()
 		} else {
-			claims, err := util.ParseToken(token)
+			claims, err := util.ParseUserToken(token)
 			if err != nil {
-				code = resp.ErrorAuthCheckTokenFail
-			} else if time.Now().Unix() > int64(claims[config.TokenEXP].(float64)) {
-				code = resp.ErrorAuthCheckTokenTimeout
+				r := resp.NewInvalidResp(resp.WithMessage("token错误"))
+				ctx.JSON(code, r)
+				ctx.Abort()
+			} else if time.Now().Unix() > claims.Exp {
+				r := resp.NewInvalidResp(resp.WithMessage("token已超时"))
+				ctx.JSON(code, r)
+				ctx.Abort()
+			} else {
+				code = resp.SUCCESS
+				ctx.Set(config.HeadUserID, claims.UserID)
+				ctx.Set(config.HeadUsername, claims.UserName)
+				ctx.Next()
 			}
-			c.Set(config.HeadUSERID, claims[config.TokenUID])
 		}
-		if code != resp.SUCCESS {
-			c.JSON(400, gin.H{
-				"status": code,
-				"msg":    resp.GetMsg(code),
-				"data":   data,
-			})
-			c.Abort()
-			return
-		}
-		c.Next()
 	}
 }
