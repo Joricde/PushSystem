@@ -17,7 +17,7 @@ func JWT() gin.HandlerFunc {
 			ctx.JSON(code, r)
 			ctx.Abort()
 		} else {
-			claims, err := util.ParseToken(token)
+			claims, err := util.ParseUserToken(token)
 			if err != nil {
 				r := resp.NewInvalidResp(resp.WithMessage("token错误"))
 				ctx.JSON(code, r)

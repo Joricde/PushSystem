@@ -44,6 +44,7 @@ func (m MessageService) DeleteGroupByGroupID(userID, groupID uint) error {
 		UserID:  userID,
 		GroupID: groupID,
 	}
+	zap.L().Debug(fmt.Sprint(userGroup))
 	err := GroupModel.DeleteGroup(&userGroup)
 	if err != nil {
 		return err
@@ -60,7 +61,42 @@ func (m MessageService) SetGroupSort(UserID, GroupID uint, sort int) error {
 	return nil
 }
 
-func (m MessageService) SetGroupInfo(service *MessageService) error {
+func (m MessageService) SetGroupShare(groupID uint, isShare bool) (*MessageService, error) {
+	group := new(model.Group)
+	group.ID = groupID
+	group.IsShare = isShare
+	e := GroupModel.UpdateShare(group)
+	messageService := MessageService{
+		GroupID:   group.ID,
+		CreatedAt: group.CreatedAt,
+		IsShare:   isShare,
+	}
+	if e != nil {
+		return nil, e
+	}
+
+	return &messageService, nil
+}
+
+func (m MessageService) JoinShareGroup(userID, groupID uint, sort int) (bool, error) {
+	isBelongToUser, e := m.IsBelongToUser(userID, groupID)
+	if e != nil {
+		return false, e
+	}
+	if !isBelongToUser {
+		group := model.UserGroup{UserID: userID, GroupID: groupID, Sort: sort}
+		_, err := UserGroupModel.Create(&group)
+		if err != nil {
+			return false, err
+		} else {
+			return true, nil
+		}
+	} else {
+		return false, nil
+	}
+}
+
+func (m MessageService) SetGroupTitle(service *MessageService) error {
 	group := new(model.Group)
 	group.ID = service.GroupID
 	group.Title = service.Title
@@ -72,15 +108,9 @@ func (m MessageService) SetGroupInfo(service *MessageService) error {
 	return nil
 }
 
-func (m MessageService) SetGroupShare(groupID uint) {
-	group := new(model.Group)
-	group.ID = groupID
-	group.Update(group)
-}
-
 func (m MessageService) IsBelongToUser(userID, groupID uint) (bool, error) {
 	g := model.UserGroup{}
-	userGroup, err := g.RetrieveGroupIDByUserID(userID, groupID)
+	userGroup, err := g.RetrieveByUserIDAndGroupID(userID, groupID)
 	if err != nil {
 		return false, err
 	}

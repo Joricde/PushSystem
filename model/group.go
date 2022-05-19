@@ -58,16 +58,22 @@ func (g Group) DeleteByID(groupID uint) error {
 }
 
 func (g Group) Update(group *Group) error {
-	err := DB.Model(group).Updates(Group{
-		IsShare: group.IsShare,
-		Title:   group.Title,
-	}).Error
+	err := DB.Model(group).Update("title", group.Title).Error
 	if err != nil {
 		zap.L().Error("create group error :" + err.Error())
 		DB.Rollback()
 		return err
 	}
-	DB.Commit()
+	return nil
+}
+
+func (g Group) UpdateShare(group *Group) error {
+	err := DB.Model(group).Update("is_share", group.IsShare).Error
+	if err != nil {
+		zap.L().Error("create group error :" + err.Error())
+		DB.Rollback()
+		return err
+	}
 	return nil
 }
 
@@ -96,10 +102,9 @@ func (g Group) AppendGroup(userGroup *UserGroup, group *Group) error {
 }
 
 func (g Group) DeleteGroup(userGroup *UserGroup) error {
-	e := DB.Where(&UserGroup{
-		UserID:  userGroup.UserID,
-		GroupID: userGroup.GroupID,
-	}).Delete(userGroup).Error
+	e := DB.Where("user_id = ? and group_id = ?",
+		userGroup.UserID, userGroup.GroupID).
+		Delete(userGroup).Error
 	if e != nil {
 		return e
 	}
@@ -107,8 +112,10 @@ func (g Group) DeleteGroup(userGroup *UserGroup) error {
 }
 
 func (g UserGroup) UpdateGroupSortByGroupID(userGroup *UserGroup) error {
-	e := DB.Model(userGroup).Where("group_id = ? and user_id = ?",
-		userGroup.GroupID, userGroup.UserID).Update("sort = ?", userGroup.Sort).Error
+	e := DB.Model(userGroup).
+		Where("group_id = ? and user_id = ?",
+			userGroup.GroupID, userGroup.UserID).
+		Update("sort = ?", userGroup.Sort).Error
 	return e
 }
 
@@ -117,7 +124,7 @@ func (g Group) GetAllGroupsByUserID(userID uint) ([]ServiceGroup, error) {
 	e := DB.Model(&Group{}).
 		Select("*").
 		Joins("inner join user_groups ug on ug.group_id = groups.id").
-		Where("ug.user_id = ?", userID).
+		Where("ug.user_id = ? and ug.deleted_at is null", userID).
 		Scan(&serviceGroups).Error
 	zap.L().Debug(fmt.Sprintln(serviceGroups))
 	return serviceGroups, e
@@ -149,9 +156,19 @@ func (g UserGroup) RetrieveByUserID(userID uint) ([]UserGroup, error) {
 
 }
 
-func (g UserGroup) RetrieveGroupIDByUserID(userID, groupID uint) (*UserGroup, error) {
+func (g UserGroup) Create(group *UserGroup) (*UserGroup, error) {
+	e := DB.Create(&group).Error
+	if e != nil {
+		return nil, e
+	}
+	return group, nil
+}
+
+func (g UserGroup) RetrieveByUserIDAndGroupID(userID, groupID uint) (*UserGroup, error) {
 	userGroup := new(UserGroup)
-	e := DB.Where(UserGroup{UserID: userID, GroupID: groupID}).First(userGroup).Error
+	e := DB.Where("user_id = ? and group_id = ?",
+		userID, groupID).
+		First(userGroup).Error
 	zap.L().Debug(fmt.Sprintln(userGroup))
 	if e != nil && !errors.Is(e, gorm.ErrRecordNotFound) {
 		return userGroup, e

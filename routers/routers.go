@@ -31,9 +31,11 @@ func SetupRouter() *gin.Engine {
 			authed.POST("group", controller.AddGroup)
 			authed.PUT("group", controller.UpdateGroup)
 			authed.DELETE("group", controller.DeleteGroup)
+			authed.PUT("group/share", controller.SetShareable)
+			authed.GET("group/join", controller.JoinShareGroup)
 		}
 		//authed.POST("group")
-
 	}
 	return router
+
 }
