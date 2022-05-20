@@ -21,6 +21,7 @@ type config struct {
 	} `yaml:"redis"`
 	JwtSecret string `yaml:"jwtSecret"`
 	LogPath   string `yaml:"logPath"`
+	FilePath  string `yaml:"filePath"`
 }
 
 const (

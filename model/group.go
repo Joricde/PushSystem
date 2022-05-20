@@ -169,11 +169,11 @@ func (g UserGroup) RetrieveByUserIDAndGroupID(userID, groupID uint) (*UserGroup,
 	e := DB.Where("user_id = ? and group_id = ?",
 		userID, groupID).
 		First(userGroup).Error
-	zap.L().Debug(fmt.Sprintln(userGroup))
-	if e != nil && !errors.Is(e, gorm.ErrRecordNotFound) {
+	if e == nil || errors.Is(e, gorm.ErrRecordNotFound) {
+		return userGroup, nil
+	} else {
 		return userGroup, e
 	}
-	return userGroup, nil
 }
 
 func (g Group) ToString() string {

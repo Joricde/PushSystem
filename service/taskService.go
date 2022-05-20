@@ -2,6 +2,7 @@ package service
 
 import (
 	"PushSystem/model"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -41,6 +42,39 @@ func (t TaskService) AddTask(service *TaskService) error {
 		return e
 	}
 	return nil
+}
+
+func (t TaskService) DeleteTask(taskID uint) error {
+	e := TaskModel.DeleteByID(taskID)
+	return e
+}
+
+func (t TaskService) UpdateTask(service *TaskService) error {
+	task := model.Task{
+		Model:           gorm.Model{ID: service.TaskID},
+		GroupID:         service.GroupID,
+		Title:           service.Title,
+		Context:         service.Context,
+		Level:           service.Level,
+		Reminder:        service.Reminder,
+		Deadline:        service.Reminder,
+		RepetitionCycle: service.RepetitionCycle,
+		Sort:            service.Sort,
+	}
+	e := TaskModel.Update(&task)
+	return e
+}
+
+func (t TaskService) UpdateTaskAppendix(service *TaskService) error {
+	task := model.Task{
+		Model:        gorm.Model{ID: service.TaskID},
+		GroupID:      service.GroupID,
+		AppendixHash: service.AppendixHash,
+		AppendixName: service.AppendixName,
+	}
+	e := TaskModel.Update(&task)
+	return e
+
 }
 
 func (t TaskService) GetAllTasksByGroupID(groupID uint) ([]TaskService, error) {

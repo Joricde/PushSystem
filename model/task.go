@@ -34,7 +34,6 @@ func (t Task) Create(task *Task) error {
 	e := DB.Create(task).Error
 	if e != nil {
 		zap.L().Debug(e.Error())
-		DB.Rollback()
 	}
 	return e
 }
@@ -48,12 +47,11 @@ func (t Task) DeleteByID(taskID uint) error {
 }
 
 func (t Task) Update(task *Task) error {
-	e := DB.Model(&task).Updates(Task{}).Error
+	e := DB.Model(task).Updates(task).Error
 	if e != nil {
 		zap.L().Debug(e.Error())
-		DB.Rollback()
 	}
-	zap.L().Debug("create task " + utils.ToString(task.ID))
+	zap.L().Debug("Update task " + utils.ToString(task.ID))
 	return e
 }
 

@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/golang-jwt/jwt"
+	"io"
+	"mime/multipart"
 	"strconv"
 	"time"
 )
@@ -17,9 +19,24 @@ type Token struct {
 	Exp      int64
 }
 
-var hash = sha256.New()
+func CountSha256(file *multipart.FileHeader) (string, error) {
+	var hash = sha256.New()
+	open, e := file.Open()
+	if e != nil {
+		return "", e
+	}
+	_, e = io.Copy(hash, open)
+	if e != nil {
+		return "", e
+	}
+	b := hash.Sum(nil)
+	result := hex.EncodeToString(b)
+	e = open.Close()
+	return result, e
+}
 
 func AddSalt(password string, salt int64) string {
+	var hash = sha256.New()
 	hash.Write([]byte(password))
 	b := hash.Sum([]byte("1"))
 	mid := hex.EncodeToString(b) + strconv.FormatInt(salt, 10)

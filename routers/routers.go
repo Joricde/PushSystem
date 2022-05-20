@@ -29,15 +29,19 @@ func SetupRouter() *gin.Engine {
 		authed.Use(middleware.JWT())
 		{
 			authed.GET("group", controller.GetGroup)
+			authed.GET("group/join", controller.JoinShareGroup)
 			authed.POST("group", controller.AddGroup)
 			authed.PUT("group", controller.UpdateGroup)
-			authed.DELETE("group", controller.DeleteGroup)
 			authed.PUT("group/share", controller.SetShareable)
-			authed.GET("group/join", controller.JoinShareGroup)
+			authed.DELETE("group", controller.DeleteGroup)
+
 		}
 		{
 			authed.GET("/task", controller.GetTasks)
 			authed.POST("/task", controller.AddTask)
+			authed.POST("/task/upload", controller.UploadFile)
+			authed.PUT("/task", controller.UpdateTask)
+			authed.DELETE("/task", controller.DeleteTask)
 		}
 		//authed.POST("group")
 	}
