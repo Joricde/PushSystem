@@ -10,16 +10,16 @@ import (
 
 type Task struct {
 	gorm.Model
-	GroupID         uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Tile            string
-	Context         string
-	Level           int
-	Reminder        time.Time
-	Deadline        time.Time
-	RepetitionCycle int
-	AppendixHash    string `json:"appendix_hash"`
-	AppendixName    string `json:"appendix_name"`
-	sort            int
+	GroupID         uint      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Title           string    `gorm:"default:null"`
+	Context         string    `gorm:"default:null"`
+	Level           int       `gorm:"default:null"`
+	Reminder        time.Time `gorm:"default:null"`
+	Deadline        time.Time `gorm:"default:null"`
+	RepetitionCycle int       `gorm:"default:null"`
+	AppendixHash    string    `gorm:"default:null"`
+	AppendixName    string    `gorm:"default:null"`
+	Sort            int       `gorm:"default:null"`
 }
 
 const (
@@ -30,6 +30,7 @@ const (
 )
 
 func (t Task) Create(task *Task) error {
+
 	e := DB.Create(task).Error
 	if e != nil {
 		zap.L().Debug(e.Error())

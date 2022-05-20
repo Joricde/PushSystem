@@ -18,11 +18,12 @@ func SetupRouter() *gin.Engine {
 	{
 		user := api.Group("user")
 		{
-			user.POST("login", controller.Login)
 			user.GET("wechat_qr", controller.GetWechatQR)
 			user.POST("wechat_check", controller.CheckWechatLogin)
-			user.GET("check_name", controller.CheckUsernameExist)
 			user.POST("register", controller.Register)
+			user.POST("login", controller.Login)
+			user.GET("check_name", controller.CheckUsernameExist)
+
 		}
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
@@ -33,6 +34,10 @@ func SetupRouter() *gin.Engine {
 			authed.DELETE("group", controller.DeleteGroup)
 			authed.PUT("group/share", controller.SetShareable)
 			authed.GET("group/join", controller.JoinShareGroup)
+		}
+		{
+			authed.GET("/task", controller.GetTasks)
+			authed.POST("/task", controller.AddTask)
 		}
 		//authed.POST("group")
 	}

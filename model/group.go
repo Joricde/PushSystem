@@ -22,7 +22,7 @@ type UserGroup struct {
 	UserID    uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	GroupID   uint           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Sort      int
-	IsCreator bool `gorm:"default true"`
+	IsCreator bool
 }
 
 type ServiceGroup struct {
