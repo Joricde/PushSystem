@@ -121,6 +121,19 @@ func (m MessageService) IsBelongToUser(userID, groupID uint) (bool, error) {
 
 }
 
+func (m MessageService) IsGroupCreator(userID, groupID uint) (bool, error) {
+	g := model.UserGroup{}
+	userGroup, err := g.RetrieveByUserIDAndGroupID(userID, groupID)
+	if err != nil {
+		return false, err
+	}
+	if userGroup.IsCreator {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 //func (m MessageService) GetShareGroupCode(groupID uint) error {
 //
 //}
@@ -132,7 +145,7 @@ func (m MessageService) GetAllGroupsByUserID(userID uint) ([]MessageService, err
 	}
 	groupsService := make([]MessageService, len(g))
 	for i, group := range g {
-		groupsService[i].GroupID = group.ID
+		groupsService[i].GroupID = group.GroupID
 		groupsService[i].UpdatedAt = group.UpdatedAt
 		groupsService[i].CreatedAt = group.CreatedAt
 		groupsService[i].Title = group.Title

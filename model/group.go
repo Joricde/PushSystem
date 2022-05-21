@@ -27,6 +27,7 @@ type UserGroup struct {
 
 type ServiceGroup struct {
 	ID        uint
+	GroupID   uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
