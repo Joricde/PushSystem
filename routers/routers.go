@@ -45,6 +45,9 @@ func SetupRouter() *gin.Engine {
 			authed.DELETE("/task", controller.DeleteTask)
 		}
 		//authed.POST("group")
+		{
+			api.GET("/task/ws", controller.WebsocketConnect)
+		}
 	}
 	return router
 
