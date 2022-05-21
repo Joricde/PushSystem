@@ -40,6 +40,7 @@ func SetupRouter() *gin.Engine {
 			authed.GET("/task", controller.GetTasks)
 			authed.POST("/task", controller.AddTask)
 			authed.POST("/task/upload", controller.UploadFile)
+			api.GET("/task/download", controller.DownloadFile)
 			authed.PUT("/task", controller.UpdateTask)
 			authed.DELETE("/task", controller.DeleteTask)
 		}

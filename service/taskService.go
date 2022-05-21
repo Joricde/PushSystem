@@ -77,6 +77,26 @@ func (t TaskService) UpdateTaskAppendix(service *TaskService) error {
 
 }
 
+func (t TaskService) GetTasksByGTaskID(taskID uint) (*TaskService, error) {
+	task, e := TaskModel.GetTaskByTaskID(taskID)
+	if e != nil {
+		return nil, e
+	}
+	taskService := TaskService{
+		GroupID:         task.GroupID,
+		Title:           task.Title,
+		Context:         task.Context,
+		Level:           task.Level,
+		Reminder:        task.Reminder,
+		Deadline:        task.Reminder,
+		RepetitionCycle: task.RepetitionCycle,
+		AppendixHash:    task.AppendixHash,
+		AppendixName:    task.AppendixName,
+		Sort:            task.Sort,
+	}
+	return &taskService, e
+}
+
 func (t TaskService) GetAllTasksByGroupID(groupID uint) ([]TaskService, error) {
 	tasks, e := TaskModel.GetAllTaskByGroupID(groupID)
 	var taskService = make([]TaskService, len(tasks))

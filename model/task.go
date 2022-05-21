@@ -55,6 +55,14 @@ func (t Task) Update(task *Task) error {
 	return e
 }
 
+func (t Task) GetTaskByTaskID(taskID uint) (*Task, error) {
+	var tasks Task
+	e := DB.Find(&tasks, Task{Model: gorm.Model{
+		ID: taskID,
+	}}).Error
+	return &tasks, e
+}
+
 func (t Task) GetAllTaskByGroupID(GroupID uint) ([]Task, error) {
 	var tasks []Task
 	e := DB.Find(&tasks, Task{GroupID: GroupID}).Error

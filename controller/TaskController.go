@@ -5,8 +5,10 @@ import (
 	"PushSystem/resp"
 	"PushSystem/service"
 	"PushSystem/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -68,14 +70,24 @@ func DeleteTask(ctx *gin.Context) {
 
 func UploadFile(ctx *gin.Context) {
 	userID := ctx.GetUint(config.HeadUserID)
-	g, _ := strconv.ParseUint(ctx.PostForm("GroupID"), 10, 16)
+	g, e := strconv.ParseUint(ctx.PostForm("GroupID"), 10, 16)
+	if e != nil {
+		zap.L().Debug("response")
+		InvalidResp(ctx)
+		return
+	}
 	GroupID := uint(g)
 	t, e := strconv.ParseUint(ctx.PostForm("TaskID"), 10, 16)
+	if e != nil {
+		zap.L().Debug("response")
+		errorResp(ctx)
+		return
+	}
 	TaskID := uint(t)
 	belongToUser, e := GroupService.IsBelongToUser(userID, GroupID)
 	if e != nil {
 		zap.L().Debug("response")
-		errorResp(ctx)
+		InvalidResp(ctx)
 		return
 	}
 	if belongToUser {
@@ -127,18 +139,30 @@ func UploadFile(ctx *gin.Context) {
 }
 
 func DownloadFile(ctx *gin.Context) {
-
+	ok, taskService := TaskPermissionsIdentify(ctx)
+	if ok {
+		zap.L().Debug("resp")
+		t, e := taskService.GetTasksByGTaskID(taskService.TaskID)
+		if e != nil {
+			zap.L().Debug(e.Error())
+			return
+		}
+		savePath := config.Conf.FilePath + "/" + t.AppendixHash
+		filename := url.QueryEscape(t.AppendixName)
+		ctx.Writer.Header().Add("Content-Disposition",
+			fmt.Sprintf("attachment;filename=%s", filename))
+		ctx.File(savePath)
+	}
 }
 
 func TaskPermissionsIdentify(ctx *gin.Context) (bool, *service.TaskService) {
 	userID := ctx.GetUint(config.HeadUserID)
 	taskService := new(service.TaskService)
-	e := ctx.BindJSON(taskService)
-	if e != nil {
-		zap.L().Debug(e.Error())
-		InvalidResp(ctx)
-		return false, taskService
-	}
+	//if e != nil {
+	//	zap.L().Debug(e.Error())
+	//	InvalidResp(ctx)
+	//	return false, taskService
+	//}
 	belongToUser, e := GroupService.IsBelongToUser(userID, taskService.GroupID)
 	if e != nil {
 		zap.L().Debug("response")
