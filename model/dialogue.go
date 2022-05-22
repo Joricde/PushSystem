@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -10,6 +11,14 @@ type Dialogue struct {
 	GroupID uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID  uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Context string
+}
+
+type ServiceDialogue struct {
+	ID       uint
+	GroupID  uint
+	UserID   uint
+	NickName uint
+	Context  string
 }
 
 func (d Dialogue) Create(dialogue *Dialogue) error {
@@ -29,17 +38,21 @@ func (d Dialogue) Update(dialogue *Dialogue) error {
 	return err
 }
 
-func (d Dialogue) GetDialogueByID(groupID uint) ([]Dialogue, error) {
+func (d Dialogue) GetDialogueByID(id uint) ([]Dialogue, error) {
 	var dialogue []Dialogue
-	e := DB.Where("id = ?", groupID).First(&dialogue).Error
+	e := DB.Where("id = ?", id).First(&dialogue).Error
 	return dialogue, e
 }
 
-func (d Dialogue) GetAllDialogueByGroupID(groupID uint) ([]Dialogue, error) {
-	var dialogues []Dialogue
+func (d Dialogue) GetAllDialogueByGroupID(groupID uint) ([]ServiceDialogue, error) {
+	var s []ServiceDialogue
 	e := DB.Model(Group{Model: gorm.Model{ID: groupID}}).
-		Association("Dialogues").Find(&dialogues)
-	return dialogues, e
+		Association("Dialogues").Find(&s)
+	e = DB.Model(&Dialogue{}).Select("").
+		Joins("join users on users.id = dialogues.id").
+		Scan(&s).Error
+	zap.L().Debug(fmt.Sprintln(s))
+	return s, e
 }
 
 func (d Dialogue) ToString() string {
