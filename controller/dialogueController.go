@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type Group struct {
@@ -51,30 +50,6 @@ func WebSocketConn(ctx *gin.Context) {
 			ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 			return
 		}
-		defer conn.Close()
-		if dialogueGroups[groupID] == nil {
-			dialogueGroups[groupID] = make(map[uint]User)
-		}
-		dialogueGroups[groupID][userID] = User{
-			Conn: conn,
-		}
-		for {
-			time.Sleep(time.Second)
-			mt, message, err := conn.ReadMessage()
-			zap.L().Debug(fmt.Sprint(message))
-			if err != nil {
-				zap.L().Debug(fmt.Sprint(err.Error()))
-				break
-			}
-			d := Dia{}
-			_ = json.Unmarshal(message, &d)
-			zap.L().Debug(fmt.Sprint(d))
-			err = conn.WriteMessage(mt, message)
-			if err != nil {
-				zap.L().Debug(fmt.Sprint(err.Error()))
-				break
-			}
-		}
 		conn.SetCloseHandler(func(code int, text string) error {
 			e := conn.Close()
 			if e != nil {
@@ -86,6 +61,29 @@ func WebSocketConn(ctx *gin.Context) {
 			return nil
 		})
 
+		if dialogueGroups[groupID] == nil {
+			dialogueGroups[groupID] = make(map[uint]User)
+		}
+		dialogueGroups[groupID][userID] = User{
+			Conn: conn,
+		}
+		d := Dia{}
+		for {
+			mt, message, err := conn.ReadMessage()
+			zap.L().Debug(fmt.Sprint(message))
+			if err != nil {
+				zap.L().Debug(fmt.Sprint(err.Error()))
+				break
+			}
+			_ = json.Unmarshal(message, &d)
+			zap.L().Debug(fmt.Sprint(d))
+			err = conn.WriteMessage(mt, message)
+			//TODO 完成ws读写
+			if err != nil {
+				zap.L().Debug(fmt.Sprint(err.Error()))
+				break
+			}
+		}
 	}
 }
 
