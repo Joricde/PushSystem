@@ -26,7 +26,10 @@ type Dia struct {
 	Context string
 }
 
-var dialogueGroups = make(map[uint]map[uint]User)
+var (
+	dialogueGroups = make(map[uint]map[uint]User)
+	respMessage    chan []byte
+)
 
 func WebSocketConn(ctx *gin.Context) {
 	g, e := strconv.Atoi(ctx.Query("GroupID"))
@@ -67,17 +70,33 @@ func WebSocketConn(ctx *gin.Context) {
 		dialogueGroups[groupID][userID] = User{
 			Conn: conn,
 		}
-		d := Dia{}
+		d, e := service.DialogueModel.GetAllDialogueByGroupID(groupID)
+		if e != nil {
+			return
+		}
+		dialogues, e := json.Marshal(d)
+		if e != nil {
+			return
+		}
+		e = conn.WriteMessage(1, dialogues)
+		if e != nil {
+			return
+		}
 		for {
-			mt, message, err := conn.ReadMessage()
+			_, message, err := conn.ReadMessage()
 			zap.L().Debug(fmt.Sprint(message))
 			if err != nil {
 				zap.L().Debug(fmt.Sprint(err.Error()))
 				break
 			}
-			_ = json.Unmarshal(message, &d)
+			e = json.Unmarshal(message, &d)
+			if e != nil {
+				zap.L().Debug(fmt.Sprint(err.Error()))
+				break
+			}
 			zap.L().Debug(fmt.Sprint(d))
-			err = conn.WriteMessage(mt, message)
+			err = conn.WriteMessage(1, message)
+
 			//TODO 完成ws读写
 			if err != nil {
 				zap.L().Debug(fmt.Sprint(err.Error()))
@@ -87,7 +106,16 @@ func WebSocketConn(ctx *gin.Context) {
 	}
 }
 
-func getAllDialogue() {
+func getAllDialogue(groupID uint) ([]service.DialogueService, error) {
+	d := new(service.DialogueService)
+	dialogueServices, e := d.GetDialogueByGroupID(groupID)
+	if e != nil {
+		return nil, e
+	}
+	return dialogueServices, nil
+}
+
+func Add() {
 
 }
 

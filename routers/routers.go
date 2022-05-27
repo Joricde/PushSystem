@@ -22,7 +22,7 @@ func SetupRouter() *gin.Engine {
 			user.POST("wechat_check", controller.CheckWechatLogin)
 			user.POST("register", controller.Register)
 			user.POST("login", controller.Login)
-			user.GET("check_name/:username", controller.CheckUsernameExist)
+			user.GET("check_name", controller.CheckUsernameExist)
 
 		}
 		authed := api.Group("/")
