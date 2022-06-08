@@ -32,14 +32,14 @@ var (
 )
 
 func WebSocketConn(ctx *gin.Context) {
+	zap.L().Debug(fmt.Sprint("test"))
 	g, e := strconv.Atoi(ctx.Query("GroupID"))
 	if e != nil {
 		zap.L().Debug(fmt.Sprint("test"))
 		ctx.JSON(resp.SUCCESS, resp.NewInvalidResp())
 		return
 	}
-	u, e := strconv.Atoi(ctx.Query("UserID"))
-	userID := uint(u)
+	userID := ctx.GetUint("uid")
 	groupID := uint(g)
 	zap.L().Debug(fmt.Sprint(userID, groupID))
 	if DialogueIdentify(userID, groupID) {
@@ -72,32 +72,43 @@ func WebSocketConn(ctx *gin.Context) {
 		}
 		d, e := service.DialogueModel.GetAllDialogueByGroupID(groupID)
 		if e != nil {
+			ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 			return
 		}
 		dialogues, e := json.Marshal(d)
 		if e != nil {
+			ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 			return
 		}
 		e = conn.WriteMessage(1, dialogues)
 		if e != nil {
+			ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 			return
 		}
+		ds := service.DialogueService{}
 		for {
-			_, message, err := conn.ReadMessage()
-			zap.L().Debug(fmt.Sprint(message))
+			mt, message, err := conn.ReadMessage()
+			//zap.L().Debug(fmt.Sprint(string(message)))
 			if err != nil {
 				zap.L().Debug(fmt.Sprint(err.Error()))
 				break
 			}
-			e = json.Unmarshal(message, &d)
+			e = json.Unmarshal(message, &ds)
 			if e != nil {
-				zap.L().Debug(fmt.Sprint(err.Error()))
+				zap.L().Debug(fmt.Sprint(e.Error()))
 				break
 			}
+			e := ds.AddDialogue(ds)
+			if e != nil {
+				zap.L().Debug(fmt.Sprint(e.Error()))
+				return
+			}
+			for uid, user := range dialogueGroups[groupID] {
+				if uid != userID {
+					err = user.Conn.WriteMessage(mt, message)
+				}
+			}
 			zap.L().Debug(fmt.Sprint(d))
-			err = conn.WriteMessage(1, message)
-
-			//TODO 完成ws读写
 			if err != nil {
 				zap.L().Debug(fmt.Sprint(err.Error()))
 				break

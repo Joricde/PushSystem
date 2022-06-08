@@ -17,7 +17,7 @@ type ServiceDialogue struct {
 	ID       uint
 	GroupID  uint
 	UserID   uint
-	NickName uint
+	Nickname string
 	Context  string
 }
 
@@ -46,10 +46,11 @@ func (d Dialogue) GetDialogueByID(id uint) ([]Dialogue, error) {
 
 func (d Dialogue) GetAllDialogueByGroupID(groupID uint) ([]ServiceDialogue, error) {
 	var s []ServiceDialogue
-	e := DB.Model(Group{Model: gorm.Model{ID: groupID}}).
-		Association("Dialogues").Find(&s)
-	e = DB.Model(&Dialogue{}).Select("").
-		Joins("join users on users.id = dialogues.id").
+	//e := DB.Model(Group{Model: gorm.Model{ID: groupID}}).
+	//	Association("Dialogues").Find(&s)
+	e := DB.Model(&Dialogue{}).
+		Select("*").
+		Joins("inner join users u on u.id = dialogues.user_id").
 		Scan(&s).Error
 	zap.L().Debug(fmt.Sprintln(s))
 	return s, e

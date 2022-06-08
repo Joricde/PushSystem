@@ -9,7 +9,7 @@ type DialogueService struct {
 	ID       uint
 	GroupID  uint
 	UserID   uint
-	NickName uint
+	Nickname string
 	Context  string
 }
 

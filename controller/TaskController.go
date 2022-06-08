@@ -158,11 +158,12 @@ func DownloadFile(ctx *gin.Context) {
 func TaskPermissionsIdentify(ctx *gin.Context) (bool, *service.TaskService) {
 	userID := ctx.GetUint(config.HeadUserID)
 	taskService := new(service.TaskService)
-	//if e != nil {
-	//	zap.L().Debug(e.Error())
-	//	InvalidResp(ctx)
-	//	return false, taskService
-	//}
+	e := ctx.BindJSON(taskService)
+	if e != nil {
+		zap.L().Debug(e.Error())
+		InvalidResp(ctx)
+		return false, taskService
+	}
 	belongToUser, e := GroupService.IsBelongToUser(userID, taskService.GroupID)
 	if e != nil {
 		zap.L().Debug("response")

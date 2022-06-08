@@ -46,7 +46,7 @@ func SetupRouter() *gin.Engine {
 		}
 		//authed.POST("group")
 		{
-			api.GET("/task/ws", controller.WebSocketConn)
+			authed.GET("/task/ws", controller.WebSocketConn)
 		}
 	}
 	return router
