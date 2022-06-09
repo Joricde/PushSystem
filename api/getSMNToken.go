@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var a = ``
@@ -18,6 +19,6 @@ func GetSMNToken() {
 
 	// Set the auth for the request.
 	body, _ := io.ReadAll(req.Body)
-
+	time.Now().Format("2006-01-02:15:04")
 	fmt.Println(body)
 }

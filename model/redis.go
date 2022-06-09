@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -51,5 +52,26 @@ func GetClientIP(key string) (int64, error) {
 		zap.L().Error(r)
 	}
 	result, _ := strconv.ParseInt(r, 10, 64)
+	return result, err
+}
+
+func SetUserDynamicKey(userID uint) (int, error) {
+	rand.Seed(time.Now().UnixNano())
+	code := rand.Intn(900000) + 100000 // 六位数动态口令
+	t := time.Second * 1000
+	//TODO 部署时修改时间
+	key := config.RedisUserID + ":dynamicKey:" + strconv.Itoa(int(userID))
+	_, err := RedisDB.Set(c, key, code, t).Result()
+	return code, err
+}
+
+func GetUserDynamicKey(userID uint) (int, error) {
+	key := config.RedisUserID + ":dynamicKey:" + strconv.Itoa(int(userID))
+	r, err := RedisDB.Get(c, key).Result()
+	if err != nil {
+		zap.L().Error("2" + err.Error())
+		return 0, err
+	}
+	result, err := strconv.Atoi(r)
 	return result, err
 }

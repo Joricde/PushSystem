@@ -23,11 +23,15 @@ func SetupRouter() *gin.Engine {
 			user.POST("register", controller.Register)
 			user.POST("login", controller.Login)
 			user.GET("check_name", controller.CheckUsernameExist)
+			user.GET("dynamic_key", controller.GetDynamicKey)
+			user.GET("check_dynamic_key", controller.CheckDynamicKey)
+			user.GET("retrieve_password", controller.RetrievePwd)
 
 		}
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
 		{
+			authed.GET("user/change_password", controller.ChangeUserPWD)
 			authed.GET("group", controller.GetGroup)
 			authed.GET("group/join/*share_token", controller.JoinShareGroup)
 			authed.POST("group", controller.AddGroup)

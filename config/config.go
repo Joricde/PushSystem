@@ -22,6 +22,10 @@ type config struct {
 	JwtSecret string `yaml:"jwtSecret"`
 	LogPath   string `yaml:"logPath"`
 	FilePath  string `yaml:"filePath"`
+	Aliyun    struct {
+		KeyID  string `yaml:"keyid"`
+		Secret string `yaml:"secret"`
+	}
 }
 
 const (
