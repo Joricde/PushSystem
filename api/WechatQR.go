@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 type QRResp struct {
@@ -77,14 +76,4 @@ func CheckQRLogin(token string) *CheckQRResp {
 	} else {
 		return new(CheckQRResp)
 	}
-}
-
-func GetHWLogin() {
-	json := a
-	payload := strings.NewReader(json)
-	resp, _ := http.NewRequest(http.MethodPost,
-		"https://iam.cn-east-3.myhuaweicloud.com/v3/auth/tokens",
-		payload)
-	body, _ := io.ReadAll(resp.Body)
-	println(body)
 }

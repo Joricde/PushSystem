@@ -127,10 +127,6 @@ func Register(ctx *gin.Context) {
 	}
 }
 
-func RegisterFromWechat(ctx *gin.Context) {
-
-}
-
 func CheckUsernameExist(ctx *gin.Context) {
 	var userService = new(service.UserService)
 	username := ctx.Query("username")

@@ -71,6 +71,14 @@ func (u User) DeleteByUserID(userID uint) bool {
 	}
 }
 
+func (u User) RetrieveByUserID(userID uint) *User {
+	user := new(User)
+	DB.Where(&User{Model: gorm.Model{
+		ID: userID,
+	}}).First(user)
+	return user
+}
+
 func (u User) RetrieveByUsername(username string) *User {
 	user := new(User)
 	DB.Where(&User{Username: username}).First(user)

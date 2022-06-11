@@ -31,7 +31,12 @@ func SetupRouter() *gin.Engine {
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
 		{
-			authed.GET("user/change_password", controller.ChangeUserPWD)
+			{
+				authed.GET("user/change_password", controller.ChangeUserPWD)
+				authed.GET("user/check_password", controller.CheckUsePwd)
+				authed.GET("user/change_wechat_key", controller.ChangeWechatKey)
+				authed.GET("user/change_info", controller.ChangeUserInfo)
+			}
 			authed.GET("group", controller.GetGroup)
 			authed.GET("group/join/*share_token", controller.JoinShareGroup)
 			authed.POST("group", controller.AddGroup)
@@ -41,14 +46,15 @@ func SetupRouter() *gin.Engine {
 
 		}
 		{
-			authed.GET("/task", controller.GetTasks)
-			authed.POST("/task", controller.AddTask)
-			authed.POST("/task/upload", controller.UploadFile)
-			authed.GET("/task/download", controller.DownloadFile)
-			authed.PUT("/task", controller.UpdateTask)
-			authed.DELETE("/task/*group_id", controller.DeleteTask)
+			authed.GET("task", controller.GetTasks)
+			authed.POST("task", controller.AddTask)
+			authed.POST("task/upload", controller.UploadFile)
+			authed.GET("task/download", controller.DownloadFile)
+			authed.PUT("task", controller.UpdateTask)
+			authed.DELETE("task/*group_id", controller.DeleteTask)
+			authed.GET("task/send_wechat", controller.SendWechat)
+			authed.GET("task/send_mail", controller.SendMail)
 		}
-		//authed.POST("group")
 		{
 			authed.GET("/task/ws", controller.WebSocketConn)
 		}

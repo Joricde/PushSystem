@@ -1,13 +1,16 @@
 package controller
 
 import (
+	"PushSystem/api"
 	"PushSystem/config"
+	"PushSystem/model"
 	"PushSystem/resp"
 	"PushSystem/service"
 	"PushSystem/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -152,6 +155,42 @@ func DownloadFile(ctx *gin.Context) {
 		ctx.Writer.Header().Add("Content-Disposition",
 			fmt.Sprintf("attachment;filename=%s", filename))
 		ctx.File(savePath)
+	}
+}
+
+func SendWechat(ctx *gin.Context) {
+	ok, taskService := TaskPermissionsIdentify(ctx)
+	if ok {
+		t, e := taskService.GetTasksByGTaskID(taskService.TaskID)
+		if e != nil {
+			zap.L().Debug(e.Error())
+			return
+		}
+		uid := ctx.GetUint(config.TokenUID)
+		u := model.User{}.GetPasswordByUserID(uid)
+		if api.SendWechat(u.WechatKey, t.Title, t.Title) {
+			ctx.JSON(http.StatusOK, resp.NewSuccessResp())
+		} else {
+			errorResp(ctx)
+		}
+	}
+}
+
+func SendMail(ctx *gin.Context) {
+	ok, taskService := TaskPermissionsIdentify(ctx)
+	if ok {
+		t, e := taskService.GetTasksByGTaskID(taskService.TaskID)
+		if e != nil {
+			zap.L().Debug(e.Error())
+			return
+		}
+		uid := ctx.GetUint(config.TokenUID)
+		u := model.User{}.RetrieveByUserID(uid)
+		if api.SendMail(u.Email, t.Title, t.Title) == nil {
+			ctx.JSON(http.StatusOK, resp.NewSuccessResp())
+		} else {
+			errorResp(ctx)
+		}
 	}
 }
 

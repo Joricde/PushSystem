@@ -23,7 +23,7 @@ type config struct {
 	LogPath   string `yaml:"logPath"`
 	FilePath  string `yaml:"filePath"`
 	Aliyun    struct {
-		KeyID  string `yaml:"keyid"`
+		KeyID  string `yaml:"keyID"`
 		Secret string `yaml:"secret"`
 	}
 }
