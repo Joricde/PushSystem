@@ -12,3 +12,13 @@ redis:
   password: "password"
 jwtSecret: "password"
 logPath: "logs/status.log"
+filePath: "file/"
+huawei:
+  name: name
+  iamname: iamname
+  password: password
+  projectid: projectid
+
+aliyun:
+  keyid: keyid
+  secret: secret

@@ -3,12 +3,14 @@ package controller
 import (
 	"PushSystem/api"
 	"PushSystem/config"
+	"PushSystem/model"
 	"PushSystem/resp"
 	"PushSystem/service"
 	"PushSystem/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -125,10 +127,6 @@ func Register(ctx *gin.Context) {
 	}
 }
 
-func RegisterFromWechat(ctx *gin.Context) {
-
-}
-
 func CheckUsernameExist(ctx *gin.Context) {
 	var userService = new(service.UserService)
 	username := ctx.Query("username")
@@ -177,9 +175,13 @@ func CheckUsePwd(ctx *gin.Context) {
 
 func ChangeUserPWD(ctx *gin.Context) {
 	var userService = new(service.UserService)
-	pwd := ctx.PostForm("password")
+	err := ctx.Bind(userService)
+	if err != nil {
+		zap.L().Debug(err.Error())
+		return
+	}
 	uid := ctx.GetUint(config.TokenUID)
-	if userService.SetPassword(uid, pwd) {
+	if userService.SetPassword(uid, userService.Password) {
 		ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
 	} else {
 		ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
@@ -197,8 +199,93 @@ func ChangeWechatKey(ctx *gin.Context) {
 	}
 }
 
-func RetrievePwd(ctx *gin.Context) {
+func GetDynamicKey(ctx *gin.Context) {
+	s := struct {
+		Username string
+		Code     int
+	}{}
+	e := ctx.BindJSON(&s)
+	if e != nil {
+		zap.L().Debug(e.Error())
+		return
+	}
+	zap.L().Debug(fmt.Sprintln(s.Username))
+	user := service.UserService{}.GetUserByUsername(s.Username)
+	if len(user.Email) > 0 {
+		dykey, err := model.SetUserDynamicKey(user.ID)
+		if err != nil {
+			zap.L().Debug(e.Error())
+			return
+		}
+		title := "imouto帐户电子邮件验证码"
+		sendText := fmt.Sprintf("验证码为：%d，您正在登录，若非本人操作，请勿泄露。", dykey)
+		err = api.SendMail(user.Email, title, sendText)
+		if err != nil {
+			zap.L().Debug(err.Error())
+			return
+		}
+		s2 := struct {
+			UserID   uint
+			Username string
+		}{
+			UserID:   user.ID,
+			Username: user.Username,
+		}
+		ctx.JSON(http.StatusOK, resp.NewSuccessResp(resp.WithData(s2)))
+		return
+	}
+	ctx.JSON(http.StatusInternalServerError, resp.NewErrorResp())
 
+}
+
+func CheckDynamicKey(ctx *gin.Context) {
+	s := struct {
+		UserID uint
+		Code   int
+	}{}
+	e := ctx.BindJSON(&s)
+	if e != nil {
+		zap.L().Debug(e.Error())
+		return
+	}
+	zap.L().Debug(fmt.Sprint(s))
+	result, err := model.GetUserDynamicKey(s.UserID)
+	if err != nil {
+		zap.L().Debug(err.Error())
+		return
+	}
+	if s.Code == result {
+		ctx.JSON(http.StatusOK, resp.NewSuccessResp(resp.WithMessage("ok")))
+		return
+	}
+	ctx.JSON(http.StatusInternalServerError, resp.NewErrorResp())
+}
+
+func RetrievePwd(ctx *gin.Context) {
+	s := struct {
+		UserID   uint
+		Code     int
+		Password string
+	}{}
+	e := ctx.BindJSON(&s)
+	if e != nil {
+		zap.L().Debug(e.Error())
+		return
+	}
+	result, err := model.GetUserDynamicKey(s.UserID)
+	if err != nil {
+		zap.L().Debug(err.Error())
+		return
+	}
+	zap.L().Debug(fmt.Sprintln(result))
+	if s.Code == result {
+		b := service.UserService{}.SetPassword(s.UserID, s.Password)
+		if b {
+			ctx.JSON(http.StatusOK, resp.NewSuccessResp())
+			return
+		}
+	}
+	ctx.JSON(http.StatusInternalServerError, resp.NewErrorResp())
 }
 
 func isBindUser(ctx *gin.Context, user *service.UserService) bool {

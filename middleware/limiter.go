@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// 限流器，最大允许1000并发, 0.5s 速率
-var globeLimit = rate.NewLimiter(rate.Every(500*time.Millisecond), 1000)
+// 限流器，最大允许10并发, 0.1s 速率
+var globeLimit = rate.NewLimiter(rate.Every(500*time.Millisecond), 10)
 
 func GlobeLimitRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {

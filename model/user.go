@@ -9,11 +9,11 @@ import (
 // User Model
 type User struct {
 	gorm.Model
-	Username string `gorm:"type:varchar(64);not null;index" json:"username"`
-	Nickname string `gorm:"type:varchar(64)" json:"nickname"`
-	Phone    int64  `gorm:"index" json:"phone"`
+	Username string `gorm:"type:varchar(64);not null;unique;index" json:"username"`
+	Nickname string `gorm:"type:varchar(64);default:user" json:"nickname"`
+	Phone    int64  `gorm:"index; default:null" json:"phone"`
 	Email    string `gorm:"type:varchar(64); index" json:"email"`
-	WechatID int64  `gorm:"index" json:"wechat_id"`
+	WechatID int64  `gorm:"index; default:null" json:"wechat_id"`
 	Password Password
 	Groups   []Group `gorm:"many2many:user_groups"`
 	Dialogue []Dialogue
@@ -69,6 +69,14 @@ func (u User) DeleteByUserID(userID uint) bool {
 	} else {
 		return true
 	}
+}
+
+func (u User) RetrieveByUserID(userID uint) *User {
+	user := new(User)
+	DB.Where(&User{Model: gorm.Model{
+		ID: userID,
+	}}).First(user)
+	return user
 }
 
 func (u User) RetrieveByUsername(username string) *User {

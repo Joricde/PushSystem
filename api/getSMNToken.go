@@ -1,9 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var a = ``
@@ -12,10 +14,11 @@ func GetSMNToken() {
 	json := a
 	payload := strings.NewReader(json)
 	req, _ := http.NewRequest(http.MethodPost,
-		"https://iam.cn-east-3.myhuaweicloud.com/v3/auth/tokens",
+		"***/v3/auth/tokens",
 		payload)
 
 	// Set the auth for the request.
 	body, _ := io.ReadAll(req.Body)
-	println(body)
+	time.Now().Format("2006-01-02:15:04")
+	fmt.Println(body)
 }

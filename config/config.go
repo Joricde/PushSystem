@@ -21,6 +21,11 @@ type config struct {
 	} `yaml:"redis"`
 	JwtSecret string `yaml:"jwtSecret"`
 	LogPath   string `yaml:"logPath"`
+	FilePath  string `yaml:"filePath"`
+	Aliyun    struct {
+		KeyID  string `yaml:"keyID"`
+		Secret string `yaml:"secret"`
+	}
 }
 
 const (

@@ -18,23 +18,46 @@ func SetupRouter() *gin.Engine {
 	{
 		user := api.Group("user")
 		{
-			user.POST("login", controller.Login)
 			user.GET("wechat_qr", controller.GetWechatQR)
 			user.POST("wechat_check", controller.CheckWechatLogin)
-			user.GET("check_name", controller.CheckUsernameExist)
 			user.POST("register", controller.Register)
+			user.POST("login", controller.Login)
+			user.GET("check_name", controller.CheckUsernameExist)
+			user.GET("dynamic_key", controller.GetDynamicKey)
+			user.GET("check_dynamic_key", controller.CheckDynamicKey)
+			user.GET("retrieve_password", controller.RetrievePwd)
+
 		}
 		authed := api.Group("/")
 		authed.Use(middleware.JWT())
 		{
+			{
+				authed.GET("user/change_password", controller.ChangeUserPWD)
+				authed.GET("user/check_password", controller.CheckUsePwd)
+				authed.GET("user/change_wechat_key", controller.ChangeWechatKey)
+				authed.GET("user/change_info", controller.ChangeUserInfo)
+			}
 			authed.GET("group", controller.GetGroup)
+			authed.GET("group/join/*share_token", controller.JoinShareGroup)
 			authed.POST("group", controller.AddGroup)
 			authed.PUT("group", controller.UpdateGroup)
-			authed.DELETE("group", controller.DeleteGroup)
 			authed.PUT("group/share", controller.SetShareable)
-			authed.GET("group/join", controller.JoinShareGroup)
+			authed.DELETE("group", controller.DeleteGroup)
+
 		}
-		//authed.POST("group")
+		{
+			authed.GET("task", controller.GetTasks)
+			authed.POST("task", controller.AddTask)
+			authed.POST("task/upload", controller.UploadFile)
+			authed.GET("task/download", controller.DownloadFile)
+			authed.PUT("task", controller.UpdateTask)
+			authed.DELETE("task/*group_id", controller.DeleteTask)
+			authed.GET("task/send_wechat", controller.SendWechat)
+			authed.GET("task/send_mail", controller.SendMail)
+		}
+		{
+			authed.GET("/task/ws", controller.WebSocketConn)
+		}
 	}
 	return router
 

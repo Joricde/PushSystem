@@ -78,26 +78,36 @@ func DeleteGroup(ctx *gin.Context) {
 func SetShareable(ctx *gin.Context) {
 	ok, messageService := PermissionsIdentify(ctx)
 	if ok {
-		m, e := messageService.SetGroupShare(messageService.GroupID, messageService.IsShare)
+		userID := ctx.GetUint(config.HeadUserID)
+		p, e := messageService.IsGroupCreator(userID, messageService.GroupID)
 		if e != nil {
 			zap.L().Debug("response")
 			ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
 			return
 		}
-		if m.IsShare {
-			shareToken, e := util.CreateShareToken(m.GroupID)
+		if p {
+			m, e := messageService.SetGroupShare(messageService.GroupID, messageService.IsShare)
 			if e != nil {
+				zap.L().Debug("response")
 				ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
+				return
 			}
-			r := map[string]string{
-				"shareToken": shareToken,
+			if m.IsShare {
+				shareToken, e := util.CreateShareToken(m.GroupID)
+				if e != nil {
+					ctx.JSON(resp.SUCCESS, resp.NewErrorResp())
+				}
+				r := map[string]string{
+					"shareToken": shareToken,
+				}
+				zap.L().Debug("response")
+				ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(r)))
+			} else {
+				ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
 			}
-			zap.L().Debug("response")
-			ctx.JSON(resp.SUCCESS, resp.NewSuccessResp(resp.WithData(r)))
 		} else {
-			ctx.JSON(resp.SUCCESS, resp.NewSuccessResp())
+			ctx.JSON(resp.SUCCESS, resp.NewErrorResp(resp.WithMessage("非创建者")))
 		}
-
 	}
 }
 

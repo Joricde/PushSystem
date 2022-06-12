@@ -11,7 +11,7 @@ type Password struct {
 	UserID       uint   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	PasswordHash string `gorm:"type:varchar(256);not null"`
 	Salt         int64  `gorm:"type:bigint"`
-	WechatKey    string `gorm:"type:varchar(128)" json:"wechat_key"`
+	WechatKey    string `gorm:"type:varchar(128);default:null" json:"wechat_key"`
 }
 
 func (u User) UpdatePassword(userID uint, pwd *Password) bool {

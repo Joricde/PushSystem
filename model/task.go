@@ -10,16 +10,16 @@ import (
 
 type Task struct {
 	gorm.Model
-	GroupID         uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Tile            string
-	Context         string
-	Level           int
-	Reminder        time.Time
-	Deadline        time.Time
-	RepetitionCycle int
-	AppendixHash    string `json:"appendix_hash"`
-	AppendixName    string `json:"appendix_name"`
-	sort            int
+	GroupID         uint      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Title           string    `gorm:"default:null"`
+	Context         string    `gorm:"default:null"`
+	Level           int       `gorm:"default:null"`
+	Reminder        time.Time `gorm:"default:null"`
+	Deadline        time.Time `gorm:"default:null"`
+	RepetitionCycle int       `gorm:"default:null"`
+	AppendixHash    string    `gorm:"default:null"`
+	AppendixName    string    `gorm:"default:null"`
+	Sort            int       `gorm:"default:null"`
 }
 
 const (
@@ -30,10 +30,10 @@ const (
 )
 
 func (t Task) Create(task *Task) error {
+
 	e := DB.Create(task).Error
 	if e != nil {
 		zap.L().Debug(e.Error())
-		DB.Rollback()
 	}
 	return e
 }
@@ -47,13 +47,20 @@ func (t Task) DeleteByID(taskID uint) error {
 }
 
 func (t Task) Update(task *Task) error {
-	e := DB.Model(&task).Updates(Task{}).Error
+	e := DB.Model(task).Updates(task).Error
 	if e != nil {
 		zap.L().Debug(e.Error())
-		DB.Rollback()
 	}
-	zap.L().Debug("create task " + utils.ToString(task.ID))
+	zap.L().Debug("Update task " + utils.ToString(task.ID))
 	return e
+}
+
+func (t Task) GetTaskByTaskID(taskID uint) (*Task, error) {
+	var tasks Task
+	e := DB.Find(&tasks, Task{Model: gorm.Model{
+		ID: taskID,
+	}}).Error
+	return &tasks, e
 }
 
 func (t Task) GetAllTaskByGroupID(GroupID uint) ([]Task, error) {
